@@ -1,0 +1,8 @@
+{
+    "slug": "buku-tebas",
+    "name": "Manual: Tebas",
+    "type": "book",
+    "description": "Risalah teknik pedang yang mengajarkan tebasan kuat. Mempelajarinya memberi skill Tebas.",
+    "stats": { "teaches_skill": "tebas" },
+    "value": 80
+}

@@ -1,0 +1,8 @@
+{
+    "slug": "torch",
+    "name": "Torch",
+    "type": "misc",
+    "description": "A pitch-soaked torch that lights the dark passages.",
+    "stats": null,
+    "value": 5
+}

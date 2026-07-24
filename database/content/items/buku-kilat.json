@@ -1,0 +1,8 @@
+{
+    "slug": "buku-kilat",
+    "name": "Gulungan: Sambaran Kilat",
+    "type": "book",
+    "description": "Mantra petir tingkat lanjut. Mempelajarinya memberi sihir Sambaran Kilat (butuh level 3).",
+    "stats": { "teaches_spell": "kilat" },
+    "value": 180
+}

@@ -1,0 +1,67 @@
+{
+    "slug": "tikus-gudang",
+    "title": "Tikus Gudang",
+    "description": "Gudang logistik guild dipenuhi tikus sebesar anjing. Bersihkan seekor yang paling berani agar para juru tulis bisa bekerja tenang.",
+    "affiliation": "adventurer",
+    "required_rank": "F",
+    "cover_image": null,
+    "min_level": 1,
+    "order": 2,
+    "start_node": "intro",
+    "nodes": [
+        {
+            "key": "intro",
+            "type": "narrative",
+            "title": "Gudang Berdebu",
+            "body": "Bau apek dan cericit menyambutmu. Di antara tumpukan peti, sepasang mata merah berkilat. Seekor tikus raksasa menggeram, menjaga wilayahnya.",
+            "choices": [
+                { "label": "Hadapi tikus itu", "next": "fight" }
+            ]
+        },
+        {
+            "key": "fight",
+            "type": "combat",
+            "title": "Tikus Raksasa!",
+            "body": "Tikus itu melompat dengan gigi kuning terbuka.",
+            "monster": "tikus-raksasa",
+            "payload": { "on_win_node_key": "win", "on_lose_node_key": "lose" }
+        },
+        {
+            "key": "win",
+            "type": "reward",
+            "title": "Gudang Aman",
+            "body": "Tikus itu kabur ke lubang dindingnya, tak akan kembali untuk sementara. Juru tulis menyelipkan beberapa koin sebagai tanda terima kasih.",
+            "payload": { "xp": 15, "gold": 15 },
+            "choices": [
+                { "label": "Laporkan ke guild", "next": "ending_win", "is_auto": true }
+            ]
+        },
+        {
+            "key": "ending_win",
+            "type": "ending",
+            "title": "Misi Tuntas",
+            "body": "Gudang kembali tenang. Tugas kecil, tapi setiap reputasi dibangun dari hal-hal seperti ini.",
+            "payload": { "result": "victory" }
+        },
+        {
+            "key": "lose",
+            "type": "ending",
+            "title": "Dikalahkan Hama",
+            "body": "Memalukan — kau mundur dari seekor tikus. Pulihkan diri dan coba lagi.",
+            "payload": { "result": "defeat" }
+        }
+    ],
+    "monsters": [
+        {
+            "slug": "tikus-raksasa",
+            "name": "Tikus Raksasa",
+            "image": null,
+            "max_hp": 3,
+            "attack": 1,
+            "defense": 0,
+            "xp_reward": 30,
+            "gold_reward": 10,
+            "loot": []
+        }
+    ]
+}

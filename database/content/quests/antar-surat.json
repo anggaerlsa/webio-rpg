@@ -1,0 +1,40 @@
+{
+    "slug": "antar-surat",
+    "title": "Antar Surat Niaga",
+    "description": "Serikat dagang butuh kurir tepercaya untuk mengantar kontrak penting ke kantor seberang pasar. Cepat dan jangan sampai hilang.",
+    "affiliation": "merchant",
+    "required_rank": "F",
+    "cover_image": null,
+    "min_level": 1,
+    "order": 4,
+    "start_node": "intro",
+    "nodes": [
+        {
+            "key": "intro",
+            "type": "narrative",
+            "title": "Lorong Pasar",
+            "body": "Gulungan kontrak tersegel lilin merah ada di tasmu. Pasar ramai dan berisik; seorang anak menabrakmu — apakah itu sekadar kebetulan?",
+            "choices": [
+                { "label": "Pegang erat surat dan terus melaju", "next": "deliver" },
+                { "label": "Periksa tas dulu", "next": "check" }
+            ]
+        },
+        {
+            "key": "check",
+            "type": "reward",
+            "title": "Waspada",
+            "body": "Benar saja — jari kecil hampir menyambar dompetmu. Kau menangkapnya, dan si copet menjatuhkan beberapa koin saat kabur.",
+            "payload": { "xp": 10, "gold": 12 },
+            "choices": [
+                { "label": "Lanjut mengantar", "next": "deliver", "is_auto": true }
+            ]
+        },
+        {
+            "key": "deliver",
+            "type": "ending",
+            "title": "Kontrak Tersampaikan",
+            "body": "Kantor niaga menerima surat dengan segel utuh. Sang juru tulis membubuhkan stempel terima — serikat akan mengingat keandalanmu.",
+            "payload": { "result": "victory" }
+        }
+    ]
+}

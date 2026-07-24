@@ -1,0 +1,8 @@
+{
+    "slug": "cincin-kekuatan",
+    "name": "Cincin Kekuatan",
+    "type": "accessory",
+    "description": "Cincin berukir rune yang mengalirkan tenaga ke pemakainya.",
+    "stats": { "strength": 2 },
+    "value": 90
+}

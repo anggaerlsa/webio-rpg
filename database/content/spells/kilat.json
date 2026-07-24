@@ -1,0 +1,10 @@
+{
+    "slug": "kilat",
+    "name": "Sambaran Kilat",
+    "element": "angin",
+    "description": "Memanggil petir yang menyambar musuh dengan kekuatan besar.",
+    "power": 8,
+    "mana_cost": 7,
+    "min_level": 3,
+    "is_default": false
+}

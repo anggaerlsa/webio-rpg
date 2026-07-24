@@ -1,0 +1,8 @@
+{
+    "slug": "potion-sp",
+    "name": "Ramuan Stamina",
+    "type": "consumable",
+    "description": "Seduhan hijau menyegarkan yang memulihkan 30 SP (stamina).",
+    "stats": { "restore_sp": 30 },
+    "value": 20
+}

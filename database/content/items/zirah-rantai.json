@@ -1,0 +1,8 @@
+{
+    "slug": "zirah-rantai",
+    "name": "Zirah Rantai",
+    "type": "armor",
+    "description": "Anyaman cincin baja yang menahan tebasan jauh lebih baik.",
+    "stats": { "defense": 4, "vitality": 1, "req_level": 2 },
+    "value": 140
+}

@@ -1,0 +1,8 @@
+{
+    "slug": "potion-mp",
+    "name": "Ramuan Mana",
+    "type": "consumable",
+    "description": "Cairan biru berkilau yang memulihkan 30 MP (mana).",
+    "stats": { "restore_mp": 30 },
+    "value": 20
+}

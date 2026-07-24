@@ -1,0 +1,9 @@
+{
+    "slug": "pukul",
+    "name": "Pukul",
+    "type": "physical",
+    "description": "Serangan dasar dengan tangan kosong. Dimiliki setiap petualang sejak awal.",
+    "power": 1,
+    "level_req": 1,
+    "is_default": true
+}

@@ -1,0 +1,8 @@
+{
+    "slug": "kapak-perang",
+    "name": "Kapak Perang",
+    "type": "weapon",
+    "description": "Kapak berat yang menuntut tenaga, tapi membelah baju zirah sekalipun.",
+    "stats": { "attack": 4, "strength": 1, "req_level": 2 },
+    "value": 120
+}

@@ -1,0 +1,8 @@
+{
+    "slug": "jimat-keberuntungan",
+    "name": "Jimat Keberuntungan",
+    "type": "accessory",
+    "description": "Liontin tua yang konon menarik nasib baik dan tangan yang gesit.",
+    "stats": { "luck": 2, "dexterity": 1 },
+    "value": 110
+}

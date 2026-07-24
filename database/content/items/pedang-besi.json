@@ -1,0 +1,8 @@
+{
+    "slug": "pedang-besi",
+    "name": "Pedang Besi",
+    "type": "weapon",
+    "description": "Pedang besi tempaan sederhana, andalan para petualang pemula.",
+    "stats": { "attack": 2 },
+    "value": 50
+}

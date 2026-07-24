@@ -1,0 +1,9 @@
+{
+    "slug": "tebas",
+    "name": "Tebas",
+    "type": "physical",
+    "description": "Tebasan kuat dengan senjata tajam yang melukai lebih dalam.",
+    "power": 4,
+    "level_req": 2,
+    "is_default": false
+}

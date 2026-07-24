@@ -1,0 +1,49 @@
+{
+    "slug": "patroli-tembok",
+    "title": "Patroli Tembok Kota",
+    "description": "Penjaga gerbang kekurangan orang malam ini. Susuri tembok kota, pastikan tak ada penyusup, lalu laporkan.",
+    "affiliation": "adventurer",
+    "required_rank": "F",
+    "cover_image": null,
+    "min_level": 1,
+    "order": 3,
+    "start_node": "intro",
+    "nodes": [
+        {
+            "key": "intro",
+            "type": "narrative",
+            "title": "Di Atas Tembok",
+            "body": "Angin malam dingin menerpa saat kau menyusuri tembok batu. Obor-obor berkelap-kelip di kejauhan. Sejauh ini, hanya derik jangkrik yang memecah sunyi.",
+            "choices": [
+                { "label": "Periksa menara timur", "next": "tower" },
+                { "label": "Awasi gerbang utama", "next": "gate" }
+            ]
+        },
+        {
+            "key": "tower",
+            "type": "narrative",
+            "title": "Menara Timur",
+            "body": "Tangga menara berderit. Di puncak, seorang penjaga muda tertidur. Kau membangunkannya pelan dan melanjutkan ronda — krisis kecil teratasi.",
+            "choices": [
+                { "label": "Selesaikan patroli", "next": "ending_win", "is_auto": true }
+            ]
+        },
+        {
+            "key": "gate",
+            "type": "reward",
+            "title": "Gerbang Utama",
+            "body": "Kau temukan sekantung kecil yang dijatuhkan seorang pedagang — kau titipkan ke pos jaga, dan mereka memberimu upah kecil atas kejujuranmu.",
+            "payload": { "xp": 10, "gold": 10 },
+            "choices": [
+                { "label": "Selesaikan patroli", "next": "ending_win", "is_auto": true }
+            ]
+        },
+        {
+            "key": "ending_win",
+            "type": "ending",
+            "title": "Ronda Selesai",
+            "body": "Fajar menyingsing. Kota tidur dengan aman, dan kapten penjaga menganggukkan kepala penuh hormat. Misi tuntas.",
+            "payload": { "result": "victory" }
+        }
+    ]
+}

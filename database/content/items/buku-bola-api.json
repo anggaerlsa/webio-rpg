@@ -1,0 +1,8 @@
+{
+    "slug": "buku-bola-api",
+    "name": "Gulungan: Bola Api",
+    "type": "book",
+    "description": "Gulungan mantra dasar elemen api. Mempelajarinya memberi sihir Bola Api.",
+    "stats": { "teaches_spell": "bola-api" },
+    "value": 100
+}

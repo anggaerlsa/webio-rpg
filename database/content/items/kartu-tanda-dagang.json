@@ -1,0 +1,8 @@
+{
+    "slug": "kartu-tanda-dagang",
+    "name": "Kartu Tanda Dagang",
+    "type": "key",
+    "description": "Bukti keanggotaan Guild Merchant. Menandai pemiliknya sebagai pedagang resmi.",
+    "stats": null,
+    "value": 0
+}

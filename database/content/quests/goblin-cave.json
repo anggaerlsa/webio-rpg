@@ -1,0 +1,122 @@
+{
+    "slug": "goblin-cave",
+    "title": "Gua Goblin",
+    "description": "Sebuah gua lembap di tepi desa dikabarkan menyimpan harta sekaligus seekor goblin yang mengintai. Sedikit yang kembali dari sana.",
+    "affiliation": "adventurer",
+    "required_rank": "F",
+    "cover_image": null,
+    "min_level": 1,
+    "order": 1,
+    "start_node": "intro",
+    "nodes": [
+        {
+            "key": "intro",
+            "type": "narrative",
+            "title": "Mulut Gua",
+            "body": "Udara dingin berembus dari mulut gua yang gelap. Air menetes di suatu tempat di dalam, dan geraman samar menggema dari dinding batu. Genggamanmu pada senjata mengerat.",
+            "choices": [
+                { "label": "Masuk ke dalam", "next": "search" }
+            ]
+        },
+        {
+            "key": "search",
+            "type": "reward",
+            "title": "Di Dekat Pintu Masuk",
+            "body": "Tepat di dalam, ransel petualang terdahulu tergeletak ditinggalkan. Kau menyelamatkan sebuah obor dan satu ramuan penyembuh dari sana.",
+            "payload": { "item_slugs": ["torch", "potion"] },
+            "choices": [
+                { "label": "Masuk lebih dalam", "next": "fork", "is_auto": true }
+            ]
+        },
+        {
+            "key": "fork",
+            "type": "choice",
+            "title": "Persimpangan Lorong",
+            "body": "Lorong bercabang. Di kiri, sebuah celah sempit berkilau samar. Lurus ke depan, geraman makin keras. Di kanan, tebing tergenang air menjulang curam.",
+            "choices": [
+                {
+                    "label": "Nyalakan obor dan menyelip lewat celah berkilau",
+                    "next": "treasure",
+                    "requirements": { "has_item": "torch" }
+                },
+                {
+                    "label": "Terjang lurus ke lorong utama",
+                    "next": "goblin_fight",
+                    "effects": { "flags": { "charged_in": true } }
+                },
+                {
+                    "label": "Panjat tebing tinggi yang licin",
+                    "next": "ledge_treasure",
+                    "requirements": { "min_level": 3 }
+                }
+            ]
+        },
+        {
+            "key": "treasure",
+            "type": "reward",
+            "title": "Ceruk Tersembunyi",
+            "body": "Cahaya obor menyingkap sebuah ceruk kecil dan peti yang lapuk. Di dalamnya: segenggam koin emas, berkilau meski termakan usia.",
+            "payload": { "gold": 40, "xp": 15 },
+            "choices": [
+                { "label": "Ambil emasnya dan hadapi lorong", "next": "goblin_fight", "is_auto": true }
+            ]
+        },
+        {
+            "key": "ledge_treasure",
+            "type": "reward",
+            "title": "Tebing Tinggi",
+            "body": "Hanya petualang berpengalaman yang sanggup memanjat ini. Di atas tebing, sebuah kantung yang terlupakan menumpahkan emas dan sebuah ramuan.",
+            "payload": { "gold": 100, "xp": 50, "item_slugs": ["potion"] },
+            "choices": [
+                { "label": "Turun ke arah geraman", "next": "goblin_fight", "is_auto": true }
+            ]
+        },
+        {
+            "key": "goblin_fight",
+            "type": "combat",
+            "title": "Goblin Gua!",
+            "body": "Seekor goblin kurus melompat dari bayang-bayang, memamerkan gigi bergerigi dan belati karatan.",
+            "monster": "goblin",
+            "payload": { "on_win_node_key": "victory", "on_lose_node_key": "defeat" }
+        },
+        {
+            "key": "victory",
+            "type": "reward",
+            "title": "Goblin Tumbang",
+            "body": "Goblin itu ambruk ke lantai gua. Keheningan kembali, hanya dipecah tetesan air. Kau menggeledah sarangnya dan menemukan timbunan kecil.",
+            "payload": { "xp": 25, "gold": 20 },
+            "choices": [
+                { "label": "Tinggalkan gua dengan kemenangan", "next": "ending_win", "is_auto": true }
+            ]
+        },
+        {
+            "key": "ending_win",
+            "type": "ending",
+            "title": "Gua Ditaklukkan",
+            "body": "Kau melangkah kembali ke cahaya siang, lebih kaya dan sedikit lebih bijak. Malam ini desa akan tidur dengan tenang. Legendamu pun tumbuh.",
+            "payload": { "result": "victory" }
+        },
+        {
+            "key": "defeat",
+            "type": "ending",
+            "title": "Kegelapan Menelanmu",
+            "body": "Lantai gua menyongsong tubuhmu saat tenagamu habis. Petualanganmu berakhir di sini... untuk kali ini.",
+            "payload": { "result": "defeat" }
+        }
+    ],
+    "monsters": [
+        {
+            "slug": "goblin",
+            "name": "Goblin Gua",
+            "image": null,
+            "max_hp": 5,
+            "attack": 3,
+            "defense": 0,
+            "xp_reward": 60,
+            "gold_reward": 20,
+            "loot": [
+                { "item_slug": "potion", "chance": 0.5, "qty": 1 }
+            ]
+        }
+    ]
+}

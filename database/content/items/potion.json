@@ -1,0 +1,8 @@
+{
+    "slug": "potion",
+    "name": "Health Potion",
+    "type": "consumable",
+    "description": "A bubbling red brew that restores 30 HP.",
+    "stats": { "heal": 30 },
+    "value": 25
+}

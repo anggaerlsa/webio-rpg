@@ -1,0 +1,8 @@
+{
+    "slug": "zirah-kulit",
+    "name": "Zirah Kulit",
+    "type": "armor",
+    "description": "Pelindung kulit samak yang ringan dan lentur.",
+    "stats": { "defense": 2 },
+    "value": 45
+}

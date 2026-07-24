@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body,
+html {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: 'Cinzel', 'EB Garamond', ui-serif, Georgia, serif;
+    --font-serif: 'EB Garamond', ui-serif, Georgia, serif;
+}
+
+@layer base {
+    /* Light — "Perkamen Tua": kertas hangat, tinta sepia, aksen emas-perunggu. */
+    :root {
+        --background: 40 33% 89%;
+        --foreground: 28 30% 15%;
+        --card: 41 44% 94%;
+        --card-foreground: 28 30% 15%;
+        --popover: 41 44% 94%;
+        --popover-foreground: 28 30% 15%;
+        --primary: 35 52% 38%;
+        --primary-foreground: 41 52% 96%;
+        --secondary: 38 26% 82%;
+        --secondary-foreground: 28 30% 20%;
+        --muted: 39 26% 85%;
+        --muted-foreground: 30 17% 38%;
+        --accent: 40 42% 86%;
+        --accent-foreground: 28 30% 18%;
+        --destructive: 4 64% 44%;
+        --destructive-foreground: 41 52% 96%;
+        --border: 34 26% 68%;
+        --input: 34 26% 74%;
+        --ring: 38 56% 45%;
+        --chart-1: 4 64% 48%;
+        --chart-2: 152 38% 36%;
+        --chart-3: 38 56% 45%;
+        --chart-4: 255 35% 50%;
+        --chart-5: 200 45% 40%;
+        --radius: 0.5rem;
+        --sidebar-background: 34 30% 84%;
+        --sidebar-foreground: 28 28% 22%;
+        --sidebar-primary: 35 52% 38%;
+        --sidebar-primary-foreground: 41 52% 96%;
+        --sidebar-accent: 38 32% 78%;
+        --sidebar-accent-foreground: 28 30% 20%;
+        --sidebar-border: 34 24% 70%;
+        --sidebar-ring: 38 56% 45%;
+    }
+
+    /* Dark — "Ruang Bawah Tanah": obsidian hangat, teks perkamen, emas berpendar. */
+    .dark {
+        --background: 25 16% 8%;
+        --foreground: 40 30% 85%;
+        --card: 26 15% 12%;
+        --card-foreground: 40 30% 85%;
+        --popover: 26 15% 11%;
+        --popover-foreground: 40 30% 85%;
+        --primary: 40 74% 55%;
+        --primary-foreground: 26 35% 10%;
+        --secondary: 28 14% 18%;
+        --secondary-foreground: 40 30% 85%;
+        --muted: 26 12% 15%;
+        --muted-foreground: 38 16% 60%;
+        --accent: 30 18% 22%;
+        --accent-foreground: 40 34% 88%;
+        --destructive: 2 64% 52%;
+        --destructive-foreground: 40 36% 92%;
+        --border: 32 16% 22%;
+        --input: 32 14% 24%;
+        --ring: 40 70% 52%;
+        --chart-1: 2 70% 56%;
+        --chart-2: 152 45% 48%;
+        --chart-3: 40 74% 55%;
+        --chart-4: 255 55% 66%;
+        --chart-5: 200 60% 55%;
+        --sidebar-background: 25 18% 6%;
+        --sidebar-foreground: 40 28% 82%;
+        --sidebar-primary: 40 74% 55%;
+        --sidebar-primary-foreground: 26 35% 10%;
+        --sidebar-accent: 28 16% 18%;
+        --sidebar-accent-foreground: 40 32% 86%;
+        --sidebar-border: 32 16% 20%;
+        --sidebar-ring: 40 70% 52%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+        /* Pendar emas halus di atas & bawah agar latar terasa berdimensi (atmosfer RPG). */
+        background-image:
+            radial-gradient(1100px 560px at 50% -12%, hsl(var(--primary) / 0.10), transparent 62%),
+            radial-gradient(900px 520px at 100% 118%, hsl(var(--primary) / 0.07), transparent 60%);
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+    }
+
+    /* Judul memakai serif klasik bergaya prasasti (Cinzel) — ciri khas RPG fantasy. */
+    h1,
+    h2,
+    h3,
+    .font-display {
+        font-family: var(--font-display);
+        letter-spacing: 0.01em;
+    }
+}

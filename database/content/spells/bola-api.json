@@ -1,0 +1,10 @@
+{
+    "slug": "bola-api",
+    "name": "Bola Api",
+    "element": "api",
+    "description": "Melontarkan bola api yang membakar musuh.",
+    "power": 5,
+    "mana_cost": 4,
+    "min_level": 1,
+    "is_default": false
+}
