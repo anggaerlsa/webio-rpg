@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { Globe, LayoutDashboard, Package, ScrollText, ShieldHalf, Skull, Sparkles, Sword, Users } from 'lucide-vue-next';
+import { Globe, LayoutDashboard, MessagesSquare, Package, ScrollText, ShieldHalf, Skull, Sparkles, Sword, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const page = usePage();
@@ -14,6 +14,7 @@ const tabs = [
     { label: 'Monster', href: route('admin.monsters.index'), icon: Skull, match: '/admin/monsters' },
     { label: 'Misi', href: route('admin.quests.index'), icon: ScrollText, match: '/admin/quests' },
     { label: 'Rank', href: route('admin.ranks.index'), icon: ShieldHalf, match: '/admin/ranks' },
+    { label: 'Forum', href: route('admin.forum-categories.index'), icon: MessagesSquare, match: '/admin/forum-categories' },
     { label: 'Pemain', href: route('admin.players.index'), icon: Users, match: '/admin/players' },
 ];
 

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\CityController as AdminCityController;
 use App\Http\Controllers\Admin\CountryController as AdminCountryController;
+use App\Http\Controllers\Admin\ForumCategoryController as AdminForumCategoryController;
 use App\Http\Controllers\Admin\ItemController as AdminItemController;
 use App\Http\Controllers\Admin\MonsterController as AdminMonsterController;
 use App\Http\Controllers\Admin\PlaceController as AdminPlaceController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Api\CombatController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ForumController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\QuestController;
 use App\Http\Controllers\TownController;
@@ -68,6 +70,22 @@ Route::middleware(['auth'])->group(function () {
     Route::post('friends/{friendship}/accept', [FriendController::class, 'accept'])->name('friends.accept');
     Route::delete('friends/{friendship}', [FriendController::class, 'destroy'])->name('friends.destroy');
 
+    // Balai Warta — forum diskusi permanen (kategori → topik → pesan).
+    // Berbeda dari chat: tidak fana, dibaca lewat halaman Inertia biasa.
+    Route::get('forum', [ForumController::class, 'index'])->name('forum.index');
+    Route::get('forum/k/{category:slug}', [ForumController::class, 'category'])->name('forum.category');
+    Route::get('forum/k/{category:slug}/buat', [ForumController::class, 'create'])->name('forum.topic.create');
+    Route::post('forum/k/{category:slug}', [ForumController::class, 'store'])->middleware('throttle:10,1')->name('forum.topic.store');
+    Route::get('forum/t/{topic:slug}', [ForumController::class, 'topic'])->name('forum.topic');
+    Route::post('forum/t/{topic:slug}/balas', [ForumController::class, 'reply'])->middleware('throttle:20,1')->name('forum.reply');
+    Route::post('forum/p/{post}/apresiasi', [ForumController::class, 'appreciate'])->middleware('throttle:60,1')->name('forum.post.appreciate');
+    Route::put('forum/p/{post}', [ForumController::class, 'updatePost'])->name('forum.post.update');
+    Route::delete('forum/p/{post}', [ForumController::class, 'destroyPost'])->name('forum.post.destroy');
+    // Moderasi (Dewa) — dijaga di ForumService, bukan middleware, agar pesan galatnya ramah.
+    Route::post('forum/t/{topic:slug}/sematkan', [ForumController::class, 'pin'])->name('forum.topic.pin');
+    Route::post('forum/t/{topic:slug}/kunci', [ForumController::class, 'lock'])->name('forum.topic.lock');
+    Route::delete('forum/t/{topic:slug}', [ForumController::class, 'destroyTopic'])->name('forum.topic.destroy');
+
     // Combat (JSON turn loop, consumed via fetch from the Vue combat view)
     Route::post('combat/start', [CombatController::class, 'start'])->name('combat.start');
     Route::post('combat/act', [CombatController::class, 'act'])->name('combat.act');
@@ -84,6 +102,10 @@ Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->grou
     Route::resource('monsters', AdminMonsterController::class)->except(['show']);
     Route::resource('quests', AdminQuestController::class)->except(['show']);
     Route::resource('quests.nodes', AdminQuestNodeController::class)->except(['show', 'index']);
+
+    // Balai Warta — kategori forum (terkunci = hanya Dewa yang boleh buka topik).
+    Route::resource('forum-categories', AdminForumCategoryController::class)
+        ->except(['show'])->parameters(['forum-categories' => 'category']);
 
     // Rank — ambang naik rank (misi per rank).
     Route::get('ranks', [AdminRankController::class, 'index'])->name('ranks.index');

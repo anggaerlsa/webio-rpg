@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\ForumService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -49,6 +50,10 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'success' => fn () => $request->session()->get('success'),
             ],
+            // Lencana Balai Warta di sidebar: balasan baru di topik yang pemain ikuti.
+            'forum' => fn () => $request->user()
+                ? ['unread' => app(ForumService::class)->unreadCount($request->user())]
+                : null,
         ]);
     }
 }

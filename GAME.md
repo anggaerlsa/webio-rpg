@@ -77,6 +77,18 @@ Panel **ChatDock** mengambang di kanan tiap halaman game (`resources/js/componen
 - **Identitas chat** = nama karakter (`User::displayName()`); butuh punya karakter (`can_chat`). Server-authoritative; logika di `App\Services\{ChatService,FriendService}`, event di `app/Events/`, tabel `friendships` & `chat_messages`.
 - **Catatan dev:** real-time butuh server Reverb berjalan (`php artisan reverb:start`, kini termasuk di `composer run dev`). Kunci `REVERB_*`/`VITE_REVERB_*` & `BROADCAST_CONNECTION=reverb` ada di `.env`. Reverb butuh MySQL hidup (cache). Reverb di Windows: berjalan via event-loop ReactPHP (tanpa ext-pcntl/sockets).
 
+## Balai Warta (forum diskusi)
+Forum **permanen** — kebalikan dari chat yang fana 30 menit. Menu **Balai Warta** di sidebar (`/forum`), bukan lewat Tempat di kota (gesekan terlalu tinggi kalau harus jalan ke sana tiap kali). Istilahnya netral: **Kategori → Topik → Balasan**.
+- **Struktur:** `forum_categories` (dikelola Dewa) → `forum_topics` → `forum_posts`. **Pesan pertama topik = ForumPost ber-`is_first`**, jadi ubah/kutip/apresiasi memakai satu jalur kode. Hapus balasan = **soft delete** (jejak moderasi tetap ada). Kolom `scope` sudah ada di kategori (default `global`) untuk ekspansi per-negara/kota/guild — slice ini semuanya global.
+- **Kategori bawaan** (dibuat di migrasi, bukan JSON konten): Warta Kerajaan (terkunci — hanya Dewa yang buka topik), Kedai Minum, Papan Strategi, Balai Rekrutmen, Ruang Keluhan. Tiap kategori bisa diberi `min_rank`.
+- **Apresiasi & Reputasi:** satu apresiasi (+1) per pemain per pesan, bisa dibatalkan (`forum_votes`, unique post+user; kolom `value` disiapkan bila kelak ingin nilai negatif). Akumulasinya = `characters.reputation` — **murni sosial: tidak memberi XP, emas, atau stat** (mencegah farming lewat spam). Tak bisa mengapresiasi pesan sendiri.
+- **Identitas penulis** memakai yang sudah ada: nama karakter + **Rank** + Level + gelar (`users.job`) + reputasi. Tidak ada tangga pangkat forum terpisah.
+- **Aturan tulis:** wajib punya karakter; judul 4–120 & isi 2–5000 karakter; **teks biasa** (di-escape, baris baru dipertahankan — belum ada markdown/BBCode); jendela ubah **15 menit** (`ForumService::EDIT_WINDOW_MINUTES`, Dewa bebas kapan saja); throttle rute (10 topik & 20 balasan per menit). Kutipan **satu tingkat** (`reply_to_id`), bukan pohon bersarang.
+- **Moderasi (Dewa):** sematkan, kunci, hapus topik — dijaga `ForumService::ensureModerator` (bukan middleware, supaya pesan galatnya ramah lewat flash). Hapus topik/pesan **menarik kembali reputasi** dari apresiasi yang ikut hilang. Role walikota/guildmaster sebagai moderator menyusul.
+- **Lencana "balasan baru"** di sidebar: `users.forum_seen_at` + satu query hitung balasan orang lain di topik yang pemain ikut menulis (`ForumService::unreadCount`, dishare lewat `HandleInertiaRequests`). Bertambah langsung lewat event **`ForumReplyPosted`** ke channel pribadi `App.Models.User.{id}` — **di-queue (`ShouldBroadcast`), bukan `...Now`**, supaya Reverb yang mati tidak menggagalkan penulisan balasan. Isi topik tidak disiarkan: tanpa polling, tanpa live-update.
+- **Panel Dewa:** tab **Forum** (`/admin/forum-categories`) untuk CRUD kategori (nama/slug/deskripsi/urutan/terkunci/rank minimal). Hapus kategori = cascade seluruh topik & pesannya.
+- Belum masuk: bursa jual-beli antar pemain (butuh sistem trade/escrow), sundul berbayar, pencarian, lampiran, scope per-lokasi.
+
 ## Menjalankan (dev)
 ```powershell
 # dari F:\xampp82\htdocs\webio
@@ -113,7 +125,7 @@ php artisan game:import --fresh     # bersihkan konten + progres, lalu impor ula
 
 ## Panel Admin — superadmin
 - Akses di **`/admin`** (hanya user dengan `role = superadmin`; lainnya kena 403). Tautan muncul di Beranda & sidebar.
-- CRUD penuh (UI Bahasa Indonesia) untuk: **Items**, **Skill**, **Sihir**, **Monster**, **Misi → Adegan (Node) → Pilihan** (editor cerita bertingkat; Misi punya **Guild Penyelenggara** + **Rank Minimal**), **Rank** (ambang naik rank), **Dunia** (lokasi, lihat di bawah), dan **Pemain**. Field JSON diisi via textarea. Skill/Sihir punya `power` (damage) & flag *default*.
+- CRUD penuh (UI Bahasa Indonesia) untuk: **Items**, **Skill**, **Sihir**, **Monster**, **Misi → Adegan (Node) → Pilihan** (editor cerita bertingkat; Misi punya **Guild Penyelenggara** + **Rank Minimal**), **Rank** (ambang naik rank), **Forum** (kategori Balai Warta), **Dunia** (lokasi, lihat di bawah), dan **Pemain**. Field JSON diisi via textarea. Skill/Sihir punya `power` (damage) & flag *default*.
 
 ### Pemain — kelola akun & karakter (`/admin/players`)
 - Daftar semua user (badge peran Pemain/Dewa) + ringkasan karakter. **Edit** akun (nama, email, peran, gelar, ganti sandi opsional) **dan** seluruh stat karakter (level/xp/emas, HP/SP/MP, serangan/pertahanan, STR/AGI/DEX/INT/VIT/LUK, rank) — panel Dewa bisa menyetel apa pun. **Hapus** pemain → **cascade** menghapus karakter + semua progres (saves, sesi pertarungan, inventaris, skill/spell) lewat FK `cascadeOnDelete`.
@@ -148,6 +160,7 @@ php artisan game:import --fresh     # bersihkan konten + progres, lalu impor ula
 | Perlengkapan (equip, stat efektif) | `app/Services/EquipmentService.php` · `CharacterController@equip/unequip` · `resources/js/components/game/EquipmentPanel.vue` |
 | Pelajari skill/sihir dari buku | `app/Services/LearningService.php` · `CharacterController@learn` (Toko Sihir = `magic_shop`) |
 | Chat & teman (real-time) | `app/Services/{ChatService,FriendService}.php` · `app/Http/Controllers/{Chat,Friend}Controller.php` · `app/Events/` · `resources/js/components/game/ChatDock.vue` · `resources/js/echo.ts` · `routes/channels.php` |
+| Balai Warta (forum) | `app/Services/ForumService.php` · `app/Http/Controllers/ForumController.php` · `app/Http/Controllers/Admin/ForumCategoryController.php` · `app/Events/ForumReplyPosted.php` · `resources/js/pages/Forum/` · `resources/js/pages/admin/forum/` |
 | Leveling | `app/Services/LevelService.php` |
 | Import konten | `app/Console/Commands/ImportGameContent.php` |
 | Halaman (Inertia) | `app/Http/Controllers/` · rute `routes/web.php` |
@@ -158,7 +171,7 @@ php artisan game:import --fresh     # bersihkan konten + progres, lalu impor ula
 
 ## Test
 ```powershell
-php artisan test     # 134 test (auth bawaan + CombatService/StoryEngine/GameFlow/Admin/World/Inventory/Profil/Pemain/Town/RankMission/Equipment/Learning/FriendChat)
+php artisan test     # 155 test (auth bawaan + CombatService/StoryEngine/GameFlow/Admin/World/Inventory/Profil/Pemain/Town/RankMission/Equipment/Learning/FriendChat/Forum)
 ```
 Test memakai SQLite in-memory — **tidak** menyentuh database `webio`.
 
@@ -170,4 +183,5 @@ Test memakai SQLite in-memory — **tidak** menyentuh database `webio`.
 - **Equip — lanjutan**: slot lebih banyak (helm/perisai/sepatu), syarat class/rank untuk item, set-bonus, durability.
 - **Skill/sihir — lanjutan**: sumber lain (scroll drop monster, latih di guild), gate pengetahuan/class, pohon skill. (Belajar dari **buku** di Toko Sihir sudah jalan — lihat **Perolehan Skill/Sihir**.)
 - **Rank & Misi — lanjutan**: role **walikota/guildmaster** (selain superadmin) untuk menata misi & ambang; reward rank (gelar/akses); misi berulang/harian; multi misi aktif (jurnal).
+- **Balai Warta — lanjutan**: bursa jual-beli antar pemain (butuh trade/escrow), pencarian topik, sundul berbayar (sink emas), BBCode-lite, moderator selain Dewa (walikota/guildmaster), lapor pesan, scope kategori per-negara/kota/guild.
 - **Phase 3**: CMS admin (mis. Filament) untuk penulis non-developer, animasi & audio, achievements, deploy Apache.
