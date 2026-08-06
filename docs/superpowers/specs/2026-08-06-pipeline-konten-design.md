@@ -30,7 +30,7 @@ murah.
 | Keputusan | Pilihan | Alasan |
 |---|---|---|
 | Jalur authoring | JSON ringkas + `game:import` | Ikut versi di git, bisa di-diff & di-review, tanpa UI baru. Angga penulis tunggal untuk sekarang. |
-| Arketipe | `hunt` + `errand` saja | Menutupi 3 dari 4 quest yang ada. Misi bercabang tetap ditulis panjang — itu justru nilai jualnya. |
+| Arketipe | `hunt` + `errand` saja | Misi bercabang tetap ditulis panjang — itu justru nilai jualnya. **Koreksi:** saat brainstorming disebut "menutupi 3 dari 4 quest yang ada"; pemeriksaan ulang menunjukkan itu salah — hanya `tikus-gudang` yang cocok (`hunt`), sementara `patroli-tembok` dan `antar-surat` dua-duanya bercabang. Lihat "Migrasi konten". |
 | Definisi monster | `level` + rumus, field eksplisit menimpa | Keputusan aslinya cuma "sekuat apa"; tuning manual tetap mungkin. |
 | Loot & tabel loot bersama | **Ditunda** | Monster baru 3 — belum ada duplikasi untuk dihapus. Tabel bersama sekarang = abstraksi spekulatif. |
 | Cara membangun | Expander di importer (opsi A) | Yang mahal itu menulis, bukan menyimpan; perbaikannya harus di titik tulis. Nol perubahan runtime. |
@@ -217,9 +217,18 @@ membuktikan node hasil generate benar-benar jalan di mesin cerita.
 
 ## Migrasi konten
 
-`tikus-gudang`, `patroli-tembok`, dan `antar-surat` diubah ke bentuk ringkas — sekaligus
-bukti template cukup untuk konten nyata. `goblin-cave` tetap long-form. 165 test yang sudah
-ada harus tetap lulus.
+Hanya **`tikus-gudang`** yang diubah ke bentuk ringkas (`hunt`).
+
+`patroli-tembok` dan `antar-surat` **tetap long-form**: pemeriksaan ulang menunjukkan keduanya
+bercabang — masing-masing punya dua pilihan di node pertama (`tower`/`gate` dan
+`deliver`/`check`). Memaksanya jadi `errand` akan menghapus percabangan yang justru jadi isi
+misinya. `goblin-cave` juga tetap long-form.
+
+Karena tidak ada konten lurus yang bisa memvalidasi `errand`, arketipe itu dibuktikan lewat
+**satu misi baru** (`kabar-desa`, errand Merchant tanpa tarung) — sekaligus mendemonstrasikan
+klaim M1 bahwa menambah misi jadi murah.
+
+165 test yang sudah ada harus tetap lulus.
 
 ## Di luar lingkup M1
 
