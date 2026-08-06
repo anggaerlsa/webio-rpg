@@ -91,6 +91,26 @@ class QuestTemplateTest extends TestCase
         $this->assertSame('Tikus itu kabur ke lubang dindingnya.', $nodes['ending_win']['body']);
     }
 
+    public function test_hunt_with_an_empty_reward_block_still_gets_the_win_node(): void
+    {
+        $quest = $this->huntQuest(['reward' => []]);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame(['intro', 'fight', 'win', 'ending_win', 'lose'], array_keys($nodes));
+        $this->assertSame('win', $nodes['fight']['payload']['on_win_node_key']);
+        $this->assertSame([], $nodes['win']['payload']);
+    }
+
+    public function test_monster_without_a_name_falls_back_to_its_slug_for_the_title(): void
+    {
+        $quest = $this->huntQuest(['monster' => ['slug' => 'tikus-raksasa', 'level' => 1]]);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame('tikus-raksasa!', $nodes['fight']['title']);
+    }
+
     public function test_long_form_quests_pass_through_untouched(): void
     {
         $longForm = [
@@ -134,7 +154,7 @@ class QuestTemplateTest extends TestCase
         $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
 
         $this->assertSame('Kalah', $nodes['lose']['title']);
-        $this->assertNotEmpty($nodes['lose']['body']);
+        $this->assertSame('Kau tumbang. Pulihkan diri lalu coba lagi.', $nodes['lose']['body']);
     }
 
     public function test_outro_overrides_the_default_ending_text(): void

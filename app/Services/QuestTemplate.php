@@ -71,8 +71,10 @@ class QuestTemplate
         $lose = self::prose($slug, 'hunt.lose', $hunt['lose'] ?? null, required: false);
         $outro = self::prose($slug, 'hunt.outro', $hunt['outro'] ?? null, required: false);
 
-        $reward = $hunt['reward'] ?? null;
-        $afterFight = $reward ? 'win' : 'ending_win';
+        // Presence-based, bukan truthy — `"reward": {}` (array kosong) tetap dianggap ada.
+        $hasReward = array_key_exists('reward', $hunt) && $hunt['reward'] !== null;
+        $reward = $hasReward ? $hunt['reward'] : null;
+        $afterFight = $hasReward ? 'win' : 'ending_win';
 
         $nodes = [
             [
@@ -85,18 +87,18 @@ class QuestTemplate
             [
                 'key' => 'fight',
                 'type' => 'combat',
-                'title' => $fight['title'] ?? $monster['name'].'!',
+                'title' => $fight['title'] ?? ($monster['name'] ?? $monster['slug']).'!',
                 'body' => $fight['body'],
                 'monster' => $monster['slug'],
                 'payload' => ['on_win_node_key' => $afterFight, 'on_lose_node_key' => 'lose'],
             ],
         ];
 
-        if ($reward) {
+        if ($hasReward) {
             $nodes[] = self::rewardNode($win, $reward);
         }
 
-        $nodes[] = self::endingWin($win, $outro, hasReward: (bool) $reward);
+        $nodes[] = self::endingWin($win, $outro, hasReward: $hasReward);
         $nodes[] = [
             'key' => 'lose',
             'type' => 'ending',
