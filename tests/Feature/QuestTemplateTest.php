@@ -274,6 +274,17 @@ class QuestTemplateTest extends TestCase
         $this->assertSame('Surat sampai di tangan yang benar. Bayaran diserahkan.', $nodes['ending_win']['body']);
     }
 
+    public function test_errand_with_an_empty_reward_block_still_gets_the_win_node(): void
+    {
+        $quest = $this->errandQuest(['reward' => []]);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame(['beat_1', 'beat_2', 'win', 'ending_win'], array_keys($nodes));
+        $this->assertSame('win', $nodes['beat_2']['choices'][0]['next']);
+        $this->assertSame([], $nodes['win']['payload']);
+    }
+
     public function test_a_single_beat_errand_works(): void
     {
         $quest = $this->errandQuest(['beats' => ['Kau menyampaikan pesan singkat itu.']]);
