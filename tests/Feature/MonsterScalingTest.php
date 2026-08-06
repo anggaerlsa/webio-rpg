@@ -91,6 +91,46 @@ class MonsterScalingTest extends TestCase
         $this->upsertMonster(['slug' => 'aneh', 'name' => 'Aneh', 'level' => 'tiga']);
     }
 
+    public function test_loot_must_be_an_array(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('`loot` harus berupa array');
+        $this->upsertMonster([
+            'slug' => 'loot-salah', 'name' => 'Loot Salah', 'level' => 1, 'loot' => 'sword',
+        ]);
+    }
+
+    public function test_stat_field_must_be_an_integer(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('`max_hp` harus integer');
+        $this->upsertMonster([
+            'slug' => 'hp-salah', 'name' => 'HP Salah', 'level' => 1, 'max_hp' => '3O',
+        ]);
+    }
+
+    public function test_stat_field_cannot_be_negative(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('`defense` harus integer');
+        $this->upsertMonster([
+            'slug' => 'defense-negatif', 'name' => 'Defense Negatif', 'level' => 1, 'defense' => -100,
+        ]);
+    }
+
+    public function test_explicit_zero_beats_a_nonzero_formula_value(): void
+    {
+        // Level 3: rumus defense = intdiv(2, 2) = 1. `isset()` harus tetap
+        // menangkap override eksplisit ke 0, bukan `empty()`/`?:` yang akan
+        // salah menganggap 0 sebagai "tidak diisi".
+        $this->upsertMonster([
+            'slug' => 'defense-nol', 'name' => 'Defense Nol', 'level' => 3, 'defense' => 0,
+        ]);
+
+        $monster = Monster::where('slug', 'defense-nol')->firstOrFail();
+        $this->assertSame(0, $monster->defense);
+    }
+
     /**
      * `upsertMonster` privat — dipanggil lewat reflection supaya test satu blok
      * monster tidak perlu menulis file JSON sementara.

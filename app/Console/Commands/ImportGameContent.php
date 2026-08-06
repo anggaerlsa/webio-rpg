@@ -220,11 +220,18 @@ class ImportGameContent extends Command
             throw new RuntimeException("Monster `{$slug}`: `level` harus integer ≥ 1.");
         }
 
+        if (isset($data['loot']) && ! is_array($data['loot'])) {
+            throw new RuntimeException("Monster `{$slug}`: `loot` harus berupa array.");
+        }
+
         // Rumus level jadi dasar; field yang ditulis eksplisit menimpanya.
         $stats = isset($data['level']) ? Monster::statsForLevel($data['level']) : [];
         foreach (['max_hp', 'attack', 'defense', 'magic_attack', 'magic_defense', 'xp_reward', 'gold_reward'] as $field) {
             if (isset($data[$field])) {
-                $stats[$field] = (int) $data[$field];
+                if (! is_int($data[$field]) || $data[$field] < 0) {
+                    throw new RuntimeException("Monster `{$slug}`: `{$field}` harus integer ≥ 0.");
+                }
+                $stats[$field] = $data[$field];
             }
         }
 
