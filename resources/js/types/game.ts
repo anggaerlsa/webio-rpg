@@ -21,6 +21,8 @@ export interface ItemState {
 export interface EffectiveStats {
     attack: number;
     defense: number;
+    magic_attack: number;
+    magic_defense: number;
     strength: number;
     agility: number;
     dexterity: number;
@@ -72,6 +74,8 @@ export interface CharacterState {
     luck: number;
     attack: number;
     defense: number;
+    magic_attack: number;
+    magic_defense: number;
     gold: number;
     is_alive: boolean;
     avatar: string | null;

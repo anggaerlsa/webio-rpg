@@ -16,15 +16,19 @@ pemain memilih skill/spell yang dikuasai (semua punya **Pukul** secara default),
 - **Job** (user-meta) mulai **"Commoner"**. Setelah karakter dibuat, dashboard menampilkan **modal afiliasi**: **Guild Petualang** atau **Guild Merchant**.
   - Petualang → job `adventurer`, `rank = F`, dapat item **Kartu Tanda Petualang**.
   - Merchant → job `merchant`, `rank = F`, dapat item **Kartu Tanda Dagang**.
+- **Hadiah pembuka:** karakter baru langsung menerima **satu senjata latihan sesuai class** dan **otomatis memakainya** — Warrior → **Pedang Latihan**, Mage → **Tongkat Latihan** (`CharacterController::STARTER_WEAPON` + `giveStarterWeapon`). Senjata latihan lain (Busur Panah/Belati/Tombak Latihan) dijual murah di Blacksmith. Kalau itemnya belum diimpor atau syarat levelnya diubah admin, pembuatan karakter tetap jalan (hadiahnya saja yang dilewati/tidak terpasang).
 - Class & guild sengaja dibatasi 2 pilihan dulu; rank mulai dari F. Ekspansi (class/guild/rank lain) menyusul.
 
 ## Combat (model serangan)
-- Tiap giliran pemain memilih **serangan** (skill atau spell yang dikuasai). Damage ke monster = `max(1, power − ⌊pertahanan/2⌋)`. Lalu **monster membalas** (`max(1, serangan − ⌊pertahanan pemain/2⌋)`). Ulang sampai HP monster atau pemain habis.
+- **Dua jalur serangan yang terpisah penuh** — `app/Services/Combat/`: `PhysicalAttack` (skill, **SP**, diskala **STR**, diperkuat `attack`, ditahan `defense`+**VIT**) dan `MagicalAttack` (sihir, **MP**, diskala **INT**, diperkuat `magic_attack`, ditahan `magic_defense`+**INT**). Keduanya turunan `AttackModule`; `CombatService` cuma memilih modul lalu memakainya, jadi menambah jalur baru tidak menyentuh mesin combat. Stat karakter: `attack`/`defense` (fisik) & `magic_attack`/`magic_defense` (sihir) — keduanya tumbuh sama saat naik level (+2/+1) dan bisa ditambah perlengkapan.
+- **Monster punya kedua sisi juga:** `attack`/`defense` + `magic_attack`/`magic_defense`, dan `attack_kind` (`physical`|`magic`) menentukan serangan baliknya lewat jalur mana — karena itu pertahanan pemain yang mana yang dipakai. Monster ber-`attack_kind = magic` tapi `magic_attack = 0` otomatis kembali ke jalur fisik (biar salah setel tidak membuatnya tak berbahaya). Diatur di Panel Dewa → Monster.
+- Tiap giliran pemain memilih **serangan** (skill atau spell yang dikuasai). Damage ke monster = `max(1, damage_modul − ⌊pertahanan_jalur_itu/2⌋)`. Lalu **monster membalas** lewat jalurnya sendiri. Ulang sampai HP monster atau pemain habis.
 - **Pukul** = skill `is_default` (power 1) yang dimiliki setiap karakter sejak dibuat. Skill/spell lain di-gate level/pengetahuan — cara perolehannya (scroll/beli/baca) menyusul.
 - Karakter menyimpan daftar skill (`character_skill`) & spell (`character_spell`) yang dikuasai.
 - Atur kekuatan lewat admin: `power` skill/spell vs `HP/pertahanan` monster. Monster contoh "Goblin Gua" kini HP 5 agar pas dengan Pukul=1.
 - **HP/SP/MP persisten:** nilai terakhir selalu disimpan ke DB (saat kena serangan, menang, kalah). **Masuk dungeon/quest TIDAK menyembuhkan** — HP/SP/MP dibawa apa adanya (`StoryEngine::startQuest`). Pengecualian: karakter yang **tumbang** (hp ≤ 0) dibangkitkan penuh (respawn) agar bisa mencoba lagi. Naik level tetap memulihkan penuh.
-- **SP & MP (resource serangan):** karakter punya `sp/max_sp` (stamina) & `mp/max_mp` (magic), default 30 (kolom + `Character::$attributes`). **Skill fisik memakai SP, sihir memakai MP.** Biaya = field eksplisit (`skills.stamina_cost` / `spells.mana_cost`) bila > 0, **jika 0 → otomatis = power** (jadi makin besar power makin besar biaya). Saat resource **kurang dari biaya**, serangan tetap berayun tapi **0 damage** ke monster (monster tetap membalas). Logika di `CombatService::act` (+ `skillCost`/`spellCost`); UI bar SP (amber) & MP (indigo) di `CharacterHud` + `CombatView`, tiap tombol serangan menampilkan biayanya. Admin set `stamina_cost` di form Skill.
+- **SP & MP (resource serangan):** karakter punya `sp/max_sp` (stamina) & `mp/max_mp` (magic), default 30 (kolom + `Character::$attributes`). **Skill fisik memakai SP, sihir memakai MP.** Biaya = field eksplisit (`skills.stamina_cost` / `spells.mana_cost`) bila > 0, **jika 0 → otomatis = power** (jadi makin besar power makin besar biaya). Saat resource **kurang dari biaya**, serangan **DITOLAK** (422 "SP/MP tidak cukup") — giliran tidak terbuang, monster tidak membalas; tombolnya juga dinonaktifkan di klien. Logika di `CombatService::act` (+ `skillCost`/`spellCost`).
+- **UI combat dipisah dua panel:** "Serangan Fisik — memakai SP" (amber) dan "Sihir — memakai MP" (indigo) di `CombatView`; log menyebut jalurnya ("Kamu memakai Pukul (fisik, −1, −1 SP)"). Galat aksi seperti resource kurang muncul sebagai banner dan **tidak** membatalkan pertarungan. Halaman Karakter punya kartu **Jalur Fisik** & **Jalur Sihir** (`CharacterStats`), HUD menampilkan 4 stat tempur. Admin set `stamina_cost` di form Skill.
 - **Atribut RPG (STR/AGI/DEX/INT/VIT/LUK):** kolom `strength/agility/dexterity/intelligence/vitality/luck`. **Berbasis 1: nilai 1 = baseline (efek 0)**; hanya poin **di atas 1** yang berpengaruh (`CombatService::bonusStat` = `max(0, stat−1)`). Default karakter baru = 1, naik +1 tiap level. Pengaruh (konstanta tunable): **STR** +2% dmg fisik/poin · **INT** +2% dmg sihir/poin · **AGI** peluang menghindar (+1%/poin) · **DEX** (+1%) & **LUK** (+0.5%) peluang kritikal (×1.5) · **VIT** menambah pertahanan · **LUK** +1% emas/poin (semua dihitung dari poin di atas 1). RNG via `rollChance` (0 = tak pernah, ≥1 = selalu → uji deterministik). Ditampilkan di halaman Karakter (komponen `CharacterStats.vue`, lengkap dengan efek turunan); combat memberi feedback **KRITIKAL!** / **Menghindar!**.
 - **Potion (consumable heal):** item `type=consumable` dengan `stats.heal` bisa dipakai untuk memulihkan HP (cap di `max_hp`, stok −1).
   - **Di luar pertarungan:** dari halaman Karakter (tombol **Gunakan** di inventaris) → `POST character.use-item`. Ditolak bila HP penuh; potion bisa membangkitkan karakter yang tumbang.
@@ -54,10 +58,11 @@ Pemain punya **kota asal** (`characters.city_id`, home city) tempat ia berintera
 ## Perlengkapan (Equip)
 Senjata/zirah/aksesori yang **dipakai** menambah stat karakter. **3 slot** (`EquipmentService::SLOTS`, kunci = tipe item): `weapon`/`armor`/`accessory` — satu item per slot.
 - **Stat dasar tidak diubah.** Bonus dihitung saat baca: `EquipmentService::bonuses()` (delta) & `effective()` (dasar + bonus). Status terpasang di pivot `character_items.equipped`. Melepas selalu mengembalikan stat persis.
-- **Bonus yang didukung** (kunci `stats` item): `attack`, `defense`, dan 6 atribut `strength/agility/dexterity/intelligence/vitality/luck`. Plus `req_level` (level minimum untuk memakai). Contoh: `{"attack": 4, "strength": 1, "req_level": 2}`.
+- **Bonus yang didukung** (kunci `stats` item): `attack`, `defense`, **`magic_attack`, `magic_defense`**, dan 6 atribut `strength/agility/dexterity/intelligence/vitality/luck`. Plus `req_level` (level minimum untuk memakai). Contoh senjata: `{"attack": 4, "strength": 1, "req_level": 2}` · contoh tongkat: `{"magic_attack": 1, "req_level": 1}`.
 - **Combat memakai stat efektif:** `CombatService` membaca AGI/DEX/INT/VIT/LUK/STR + defense **efektif**; serangan fisik mendapat tambahan **attack** dari equipment (porsi bonus saja, agar balance power-based tetap). Sihir ikut INT efektif (mis. dari aksesori).
 - **Aksi pemain** (server-authoritative, `CharacterController@equip`/`unequip`, rute `character.equip`/`character.unequip`): Pakai/Lepas dari halaman **Karakter** (panel **Perlengkapan** + tombol di inventaris). Memakai item di slot terisi otomatis melepas yang lama. Item terpasang **tak bisa dijual** (lepas dulu).
 - **Beli:** senjata/zirah di **Blacksmith**, aksesori di **Pasar** (`TownService::SHOP_STOCK`). Konten contoh: `pedang-besi`/`kapak-perang` (weapon), `zirah-kulit`/`zirah-rantai` (armor), `cincin-kekuatan`/`jimat-keberuntungan` (accessory).
+- **Tier latihan (pemula):** `pedang-latihan`, `busur-latihan`, `tongkat-latihan`, `belati-latihan`, `tombak-latihan` — semuanya `attack: 1`, `req_level: 1`, 12–18 emas. Sengaja **tidak** memberi bonus atribut supaya tidak menyaingi `pedang-besi` (atk 2, 50 emas); pembedanya cuma flavor. Satu di antaranya jadi hadiah pembuka (lihat **Karakter & onboarding**).
 - **Admin:** tipe item kini termasuk **Aksesori**; bonus diisi via field **Statistik/Efek (JSON)** di form Item.
 
 ## Perolehan Skill/Sihir (Buku & Toko Sihir)
@@ -155,6 +160,7 @@ php artisan game:import --fresh     # bersihkan konten + progres, lalu impor ula
 |---|---|
 | Mesin cerita (node, requirement, effect, save) | `app/Services/StoryEngine.php` |
 | Combat (damage, menang/kalah, reward) | `app/Services/CombatService.php` |
+| Jalur serangan fisik & sihir (rumus) | `app/Services/Combat/{AttackModule,PhysicalAttack,MagicalAttack}.php` |
 | Kota: istirahat/jual-beli (Tempat) | `app/Services/TownService.php` · `app/Http/Controllers/TownController.php` · `resources/js/pages/Town/` |
 | Rank & Misi guild (ambil/selesai/naik) | `app/Services/RankService.php` · `TownController@acceptMission` · `app/Http/Controllers/Admin/RankController.php` |
 | Perlengkapan (equip, stat efektif) | `app/Services/EquipmentService.php` · `CharacterController@equip/unequip` · `resources/js/components/game/EquipmentPanel.vue` |
@@ -171,7 +177,7 @@ php artisan game:import --fresh     # bersihkan konten + progres, lalu impor ula
 
 ## Test
 ```powershell
-php artisan test     # 155 test (auth bawaan + CombatService/StoryEngine/GameFlow/Admin/World/Inventory/Profil/Pemain/Town/RankMission/Equipment/Learning/FriendChat/Forum)
+php artisan test     # 165 test (auth bawaan + CombatService/StoryEngine/GameFlow/Admin/World/Inventory/Profil/Pemain/Town/RankMission/Equipment/Learning/FriendChat/Forum)
 ```
 Test memakai SQLite in-memory — **tidak** menyentuh database `webio`.
 

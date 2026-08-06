@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import StatBar from '@/components/game/StatBar.vue';
 import type { CharacterState } from '@/types/game';
-import { Coins, Shield, Sword } from 'lucide-vue-next';
+import { Coins, Shield, ShieldHalf, Sword, Wand2 } from 'lucide-vue-next';
 
 defineProps<{ character: CharacterState }>();
 
@@ -36,6 +36,14 @@ const genderLabels: Record<string, string> = { male: 'Pria', female: 'Wanita' };
                 <span class="flex items-center gap-1" title="Pertahanan (termasuk perlengkapan)">
                     <Shield class="h-4 w-4 text-muted-foreground" />{{ character.effective?.defense ?? character.defense }}
                     <span v-if="character.equip_bonuses?.defense" class="text-xs text-emerald-600">(+{{ character.equip_bonuses.defense }})</span>
+                </span>
+                <span class="flex items-center gap-1" title="Serangan Sihir (termasuk perlengkapan)">
+                    <Wand2 class="h-4 w-4 text-indigo-400" />{{ character.effective?.magic_attack ?? character.magic_attack }}
+                    <span v-if="character.equip_bonuses?.magic_attack" class="text-xs text-emerald-600">(+{{ character.equip_bonuses.magic_attack }})</span>
+                </span>
+                <span class="flex items-center gap-1" title="Pertahanan Sihir (termasuk perlengkapan)">
+                    <ShieldHalf class="h-4 w-4 text-indigo-400" />{{ character.effective?.magic_defense ?? character.magic_defense }}
+                    <span v-if="character.equip_bonuses?.magic_defense" class="text-xs text-emerald-600">(+{{ character.equip_bonuses.magic_defense }})</span>
                 </span>
                 <span class="flex items-center gap-1" title="Emas"><Coins class="h-4 w-4 text-amber-500" />{{ character.gold }}</span>
             </div>

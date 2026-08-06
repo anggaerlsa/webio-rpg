@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { CharacterState } from '@/types/game';
-import { Brain, Clover, Shield, Sword, Target, Wind } from 'lucide-vue-next';
+import { Brain, Clover, Shield, Sword, Target, Wand2, Wind } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{ character: CharacterState }>();
@@ -25,7 +25,7 @@ const stats = computed(() => [
     { key: 'str', abbr: 'STR', name: 'Kekuatan', icon: Sword, value: eff.value.strength, gear: gear.value.strength, effect: `+${bonus(eff.value.strength) * PHYS_PER_STR}% dmg fisik` },
     { key: 'agi', abbr: 'AGI', name: 'Kelincahan', icon: Wind, value: eff.value.agility, gear: gear.value.agility, effect: `${Math.min(100, bonus(eff.value.agility) * DODGE_PER_AGI)}% hindar` },
     { key: 'dex', abbr: 'DEX', name: 'Ketangkasan', icon: Target, value: eff.value.dexterity, gear: gear.value.dexterity, effect: `+${bonus(eff.value.dexterity) * CRIT_PER_DEX}% kritikal` },
-    { key: 'int', abbr: 'INT', name: 'Kecerdasan', icon: Brain, value: eff.value.intelligence, gear: gear.value.intelligence, effect: `+${bonus(eff.value.intelligence) * MAGIC_PER_INT}% dmg sihir` },
+    { key: 'int', abbr: 'INT', name: 'Kecerdasan', icon: Brain, value: eff.value.intelligence, gear: gear.value.intelligence, effect: `+${bonus(eff.value.intelligence) * MAGIC_PER_INT}% dmg sihir · +${bonus(eff.value.intelligence)} pert. sihir` },
     { key: 'vit', abbr: 'VIT', name: 'Ketahanan', icon: Shield, value: eff.value.vitality, gear: gear.value.vitality, effect: `+${bonus(eff.value.vitality)} pertahanan` },
     { key: 'luk', abbr: 'LUK', name: 'Keberuntungan', icon: Clover, value: eff.value.luck, gear: gear.value.luck, effect: `+${bonus(eff.value.luck) * GOLD_PER_LUK}% emas` },
 ]);
@@ -54,7 +54,35 @@ const dodgeChance = computed(() => Math.min(100, bonus(eff.value.agility) * DODG
             </div>
         </div>
 
-        <div class="mt-4 flex flex-wrap gap-x-5 gap-y-1 border-t pt-3 text-xs text-muted-foreground">
+        <!-- Dua jalur serangan: fisik (SP) & sihir (MP) berdiri sendiri. -->
+        <div class="mt-4 grid grid-cols-2 gap-3 border-t pt-4">
+            <div class="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                <div class="mb-1 flex items-center gap-1.5 text-xs font-semibold text-amber-600">
+                    <Sword class="h-3.5 w-3.5" /> Jalur Fisik <span class="font-normal text-muted-foreground">· SP</span>
+                </div>
+                <div class="text-xs text-muted-foreground">
+                    Serangan <span class="font-semibold text-foreground">{{ eff.attack }}</span>
+                    <span v-if="gear.attack" class="text-emerald-600">(+{{ gear.attack }})</span>
+                    · Pertahanan <span class="font-semibold text-foreground">{{ eff.defense }}</span>
+                    <span v-if="gear.defense" class="text-emerald-600">(+{{ gear.defense }})</span>
+                </div>
+                <div class="text-xs text-muted-foreground">Diskala STR, ditahan VIT.</div>
+            </div>
+            <div class="rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3">
+                <div class="mb-1 flex items-center gap-1.5 text-xs font-semibold text-indigo-500">
+                    <Wand2 class="h-3.5 w-3.5" /> Jalur Sihir <span class="font-normal text-muted-foreground">· MP</span>
+                </div>
+                <div class="text-xs text-muted-foreground">
+                    Serangan <span class="font-semibold text-foreground">{{ eff.magic_attack }}</span>
+                    <span v-if="gear.magic_attack" class="text-emerald-600">(+{{ gear.magic_attack }})</span>
+                    · Pertahanan <span class="font-semibold text-foreground">{{ eff.magic_defense }}</span>
+                    <span v-if="gear.magic_defense" class="text-emerald-600">(+{{ gear.magic_defense }})</span>
+                </div>
+                <div class="text-xs text-muted-foreground">Diskala INT, ditahan INT.</div>
+            </div>
+        </div>
+
+        <div class="mt-3 flex flex-wrap gap-x-5 gap-y-1 border-t pt-3 text-xs text-muted-foreground">
             <span>Peluang Kritikal: <span class="font-semibold text-foreground">{{ critChance }}%</span> (×1.5 damage)</span>
             <span>Peluang Menghindar: <span class="font-semibold text-foreground">{{ dodgeChance }}%</span></span>
         </div>

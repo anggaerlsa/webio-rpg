@@ -1,0 +1,8 @@
+{
+    "slug": "tombak-latihan",
+    "name": "Tombak Latihan",
+    "type": "weapon",
+    "description": "Batang bambu tebal dengan ujung dibalut kain tebal. Senjata wajib latihan penjaga tembok: jangkauannya panjang, jadi pemula pun berani maju.",
+    "stats": { "attack": 1, "req_level": 1 },
+    "value": 18
+}

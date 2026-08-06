@@ -82,4 +82,32 @@ class OnboardingTest extends TestCase
         $this->assertSame('merchant', $user->fresh()->job);
         $this->assertTrue($char->items()->where('slug', 'kartu-tanda-dagang')->exists());
     }
+
+    public function test_new_warrior_receives_a_training_sword_already_equipped(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->post('/character', [
+            'name' => 'Aria', 'gender' => 'female', 'birth_date' => '2000-01-01', 'class' => 'Warrior',
+        ])->assertRedirect(route('dashboard'));
+
+        $char = $user->fresh()->character;
+        $weapon = $char->items()->where('slug', 'pedang-latihan')->first();
+
+        $this->assertNotNull($weapon);
+        $this->assertTrue((bool) $weapon->pivot->equipped);
+        // Bonus senjata masuk ke stat efektif.
+        $this->assertSame($char->attack + 1, app(\App\Services\EquipmentService::class)->effective($char)['attack']);
+    }
+
+    public function test_new_mage_receives_a_training_staff_instead(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->post('/character', [
+            'name' => 'Borin', 'gender' => 'male', 'birth_date' => '2000-01-01', 'class' => 'Mage',
+        ])->assertRedirect(route('dashboard'));
+
+        $char = $user->fresh()->character;
+        $this->assertTrue($char->items()->where('slug', 'tongkat-latihan')->exists());
+        $this->assertFalse($char->items()->where('slug', 'pedang-latihan')->exists());
+    }
 }

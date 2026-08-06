@@ -1,0 +1,8 @@
+{
+    "slug": "tongkat-latihan",
+    "name": "Tongkat Latihan",
+    "type": "weapon",
+    "description": "Ranting pohon abu yang diukur sepanjang lengan, dengan kristal kusam di pucuknya. Tidak menyimpan mantra apa pun, tapi mengajarkan tangan cara menuntun mana.",
+    "stats": { "magic_attack": 1, "req_level": 1 },
+    "value": 15
+}

@@ -48,6 +48,7 @@ class PlayerController extends Controller
                     'sp' => $c->sp, 'max_sp' => $c->max_sp,
                     'mp' => $c->mp, 'max_mp' => $c->max_mp,
                     'attack' => $c->attack, 'defense' => $c->defense,
+                    'magic_attack' => $c->magic_attack, 'magic_defense' => $c->magic_defense,
                     'strength' => $c->strength, 'agility' => $c->agility, 'dexterity' => $c->dexterity,
                     'intelligence' => $c->intelligence, 'vitality' => $c->vitality, 'luck' => $c->luck,
                     'rank' => $c->rank,
@@ -71,7 +72,8 @@ class PlayerController extends Controller
 
         // Field karakter hanya divalidasi bila pemain ini punya karakter.
         if ($player->character) {
-            foreach (['level', 'xp', 'gold', 'hp', 'max_hp', 'sp', 'max_sp', 'mp', 'max_mp', 'attack', 'defense',
+            foreach (['level', 'xp', 'gold', 'hp', 'max_hp', 'sp', 'max_sp', 'mp', 'max_mp',
+                'attack', 'defense', 'magic_attack', 'magic_defense',
                 'strength', 'agility', 'dexterity', 'intelligence', 'vitality', 'luck'] as $field) {
                 $rules["character.$field"] = ['required', 'integer', 'min:0'];
             }

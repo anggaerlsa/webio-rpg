@@ -48,6 +48,7 @@ class AdminPlayerTest extends TestCase
             'level' => $c->level, 'xp' => $c->xp, 'gold' => $c->gold,
             'hp' => $c->hp, 'max_hp' => $c->max_hp, 'sp' => $c->sp, 'max_sp' => $c->max_sp,
             'mp' => $c->mp, 'max_mp' => $c->max_mp, 'attack' => $c->attack, 'defense' => $c->defense,
+            'magic_attack' => $c->magic_attack, 'magic_defense' => $c->magic_defense,
             'strength' => $c->strength, 'agility' => $c->agility, 'dexterity' => $c->dexterity,
             'intelligence' => $c->intelligence, 'vitality' => $c->vitality, 'luck' => $c->luck,
             'rank' => $c->rank,

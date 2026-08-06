@@ -14,6 +14,18 @@ use Inertia\Response;
 
 class CharacterController extends Controller
 {
+    /**
+     * Hadiah pembuka untuk karakter baru: satu senjata latihan sesuai class,
+     * langsung dipakai. Senjata latihan lain (busur/belati/tombak) dijual murah
+     * di Blacksmith.
+     *
+     * @var array<string, string>
+     */
+    private const STARTER_WEAPON = [
+        'Warrior' => 'pedang-latihan',
+        'Mage' => 'tongkat-latihan',
+    ];
+
     public function __construct(
         private StoryEngine $story,
         private EquipmentService $equipment,
@@ -74,6 +86,8 @@ class CharacterController extends Controller
             'luck' => 1,
             'attack' => 10,
             'defense' => 5,
+            'magic_attack' => 10,
+            'magic_defense' => 5,
             'gold' => 0,
             'city_id' => \App\Models\Character::startingCity()?->id, // kota asal
             'is_alive' => true,
@@ -81,9 +95,32 @@ class CharacterController extends Controller
 
         // Everyone starts knowing the default abilities (e.g. Pukul).
         $character->grantDefaultAbilities();
+        $this->giveStarterWeapon($character, $data['class']);
 
         // Ke dashboard untuk onboarding pemilihan afiliasi.
         return redirect()->route('dashboard');
+    }
+
+    /**
+     * Beri senjata latihan sesuai class lalu pasangkan. Item yang belum diimpor
+     * (atau syarat levelnya diubah admin) tidak boleh menggagalkan pembuatan
+     * karakter — hadiahnya sekadar bonus pembuka.
+     */
+    private function giveStarterWeapon(\App\Models\Character $character, string $class): void
+    {
+        $slug = self::STARTER_WEAPON[$class] ?? null;
+        $item = $slug ? Item::where('slug', $slug)->first() : null;
+        if (! $item) {
+            return;
+        }
+
+        $this->story->giveItem($character, $slug);
+
+        try {
+            $this->equipment->equip($character, $item);
+        } catch (HttpException) {
+            // biarkan tersimpan di inventaris saja
+        }
     }
 
     public function show(Request $request): Response|RedirectResponse

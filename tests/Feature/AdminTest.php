@@ -128,6 +128,9 @@ class AdminTest extends TestCase
             'max_hp' => 12,
             'attack' => 4,
             'defense' => 1,
+            'magic_attack' => 9,
+            'magic_defense' => 3,
+            'attack_kind' => 'magic',
             'xp_reward' => 100,
             'gold_reward' => 40,
             'loot' => '[{"item_slug":"potion","chance":1,"qty":1}]',
@@ -135,7 +138,19 @@ class AdminTest extends TestCase
 
         $monster = Monster::where('slug', 'naga-api')->firstOrFail();
         $this->assertSame(12, $monster->max_hp);
+        $this->assertSame(9, $monster->magic_attack);
+        $this->assertSame('magic', $monster->attack_kind);
         $this->assertSame([['item_slug' => 'potion', 'chance' => 1, 'qty' => 1]], $monster->loot);
+    }
+
+    public function test_monster_attack_kind_must_be_valid(): void
+    {
+        $admin = $this->superadmin();
+
+        $this->actingAs($admin)->post('/admin/monsters', [
+            'slug' => 'naga-palsu', 'name' => 'Naga Palsu', 'max_hp' => 5, 'attack' => 1,
+            'attack_kind' => 'petir',
+        ])->assertSessionHasErrors('attack_kind');
     }
 
     public function test_superadmin_can_create_a_skill(): void

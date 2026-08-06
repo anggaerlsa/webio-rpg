@@ -24,6 +24,7 @@ class EquipmentService
     /** Stat yang bisa ditambah equipment (kunci stats item). */
     public const STAT_KEYS = [
         'attack', 'defense',
+        'magic_attack', 'magic_defense',
         'strength', 'agility', 'dexterity', 'intelligence', 'vitality', 'luck',
     ];
 
@@ -101,6 +102,8 @@ class EquipmentService
         return [
             'attack' => (int) $character->attack + $b['attack'],
             'defense' => (int) $character->defense + $b['defense'],
+            'magic_attack' => (int) $character->magic_attack + $b['magic_attack'],
+            'magic_defense' => (int) $character->magic_defense + $b['magic_defense'],
             'strength' => (int) $character->strength + $b['strength'],
             'agility' => (int) $character->agility + $b['agility'],
             'dexterity' => (int) $character->dexterity + $b['dexterity'],

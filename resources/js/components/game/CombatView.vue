@@ -5,7 +5,7 @@ import { postJson } from '@/lib/gameApi';
 import type { PotionState } from '@/types/game';
 import { router } from '@inertiajs/vue3';
 import { Coins, FlaskConical, Loader2, Skull, Sparkles, Sword, Swords, Wand2 } from 'lucide-vue-next';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 interface Attack {
     kind: 'skill' | 'spell';
@@ -27,7 +27,8 @@ interface Rewards {
 const props = defineProps<{ nodeId: number; questSlug: string }>();
 
 const loading = ref(true);
-const error = ref<string | null>(null);
+const error = ref<string | null>(null); // galat fatal: pertarungan tak bisa dimuat
+const actionError = ref<string | null>(null); // galat aksi (mis. SP kurang) — masih bisa lanjut
 const acting = ref(false);
 
 const sessionId = ref<number | null>(null);
@@ -88,7 +89,12 @@ function syncResources(r: Record<string, any>) {
 
 async function useAttack(a: Attack) {
     if (acting.value || status.value !== 'active' || sessionId.value === null) return;
+    if (!canAfford(a)) {
+        actionError.value = `${a.resource === 'mp' ? 'MP' : 'SP'} tidak cukup untuk ${a.name} — butuh ${a.cost}.`;
+        return;
+    }
     acting.value = true;
+    actionError.value = null;
     try {
         const r: Record<string, any> = await postJson(route('combat.act'), {
             session_id: sessionId.value,
@@ -101,22 +107,18 @@ async function useAttack(a: Attack) {
         syncResources(r);
 
         const resLabel = r.used.resource === 'mp' ? 'MP' : 'SP';
-        if (r.used.whiffed) {
-            // Resource exhausted: the swing lands for nothing.
-            logLine.value = `${resLabel} habis! Serangan ${r.used.name} hanya 0 damage.`;
-        } else {
-            flash.value = 'monster';
-            floatMonster.value = r.used.damage;
-            critFlash.value = !!r.used.crit;
-            logLine.value = `Kamu memakai ${r.used.name} (−${r.used.damage}${r.used.crit ? ' KRITIKAL!' : ''}, −${r.used.cost} ${resLabel}).`;
-        }
+        flash.value = 'monster';
+        floatMonster.value = r.used.damage;
+        critFlash.value = !!r.used.crit;
+        logLine.value = `Kamu memakai ${r.used.name} (${r.used.attack_kind}, −${r.used.damage}${r.used.crit ? ' KRITIKAL!' : ''}, −${r.used.cost} ${resLabel}).`;
+
         if (r.counter) {
             if (r.counter.dodged) {
                 dodgeFlash.value = true;
                 logLine.value += ` Kamu menghindar — 0 damage!`;
             } else {
                 floatPlayer.value = r.counter.damage;
-                logLine.value += ` ${monster.value.name} menyerang balik (−${r.counter.damage}).`;
+                logLine.value += ` ${monster.value.name} menyerang balik (${r.counter.kind}, −${r.counter.damage}).`;
             }
         }
         window.setTimeout(() => {
@@ -132,7 +134,9 @@ async function useAttack(a: Attack) {
         potions.value = r.potions ?? potions.value;
         if (r.status === 'won') rewards.value = r.rewards ?? null;
     } catch (e) {
-        error.value = e instanceof Error ? e.message : 'Aksi gagal.';
+        // Serangan yang ditolak server (mis. resource kurang) tidak membatalkan
+        // pertarungan — cukup tampilkan alasannya.
+        actionError.value = e instanceof Error ? e.message : 'Aksi gagal.';
     } finally {
         acting.value = false;
     }
@@ -150,6 +154,7 @@ function potionEffects(p: PotionState): string {
 async function usePotion(p: PotionState) {
     if (acting.value || status.value !== 'active' || sessionId.value === null) return;
     acting.value = true;
+    actionError.value = null;
     try {
         const r: Record<string, any> = await postJson(route('combat.use-item'), {
             session_id: sessionId.value,
@@ -181,7 +186,7 @@ async function usePotion(p: PotionState) {
         attacks.value = r.attacks ?? attacks.value;
         potions.value = r.potions ?? potions.value;
     } catch (e) {
-        error.value = e instanceof Error ? e.message : 'Gagal memakai item.';
+        actionError.value = e instanceof Error ? e.message : 'Gagal memakai item.';
     } finally {
         acting.value = false;
     }
@@ -190,6 +195,10 @@ async function usePotion(p: PotionState) {
 function canAfford(a: Attack): boolean {
     return (a.resource === 'mp' ? playerMp.value : playerSp.value) >= a.cost;
 }
+
+// Dua jalur serangan yang dipisah: fisik memotong SP, sihir memotong MP.
+const physicalAttacks = computed(() => attacks.value.filter((a) => a.resource === 'sp'));
+const magicAttacks = computed(() => attacks.value.filter((a) => a.resource === 'mp'));
 
 function continueStory() {
     router.visit(route('quests.play', props.questSlug));
@@ -254,34 +263,70 @@ function continueStory() {
                 {{ logLine }}
             </div>
 
-            <!-- Attacks -->
+            <!-- Galat aksi (mis. resource kurang) — pertarungan tetap berjalan -->
+            <div
+                v-if="actionError && status === 'active'"
+                class="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-center text-sm text-red-600"
+            >
+                {{ actionError }}
+            </div>
+
+            <!-- Serangan fisik (SP) -->
             <div v-if="status === 'active'" class="rounded-xl border bg-card p-5">
-                <p class="mb-3 text-sm font-medium text-muted-foreground">Pilih serangan:</p>
+                <p class="mb-3 flex items-center gap-2 text-sm font-medium">
+                    <Sword class="h-4 w-4 text-amber-500" /> Serangan Fisik
+                    <span class="text-xs font-normal text-muted-foreground">— memakai SP</span>
+                </p>
                 <div class="grid gap-2 sm:grid-cols-2">
                     <Button
-                        v-for="a in attacks"
+                        v-for="a in physicalAttacks"
                         :key="a.kind + a.id"
                         variant="outline"
-                        :disabled="acting"
+                        :disabled="acting || !canAfford(a)"
                         class="h-auto justify-between py-3"
-                        :class="{ 'opacity-60': !canAfford(a) }"
-                        :title="canAfford(a) ? '' : (a.resource === 'mp' ? 'MP tidak cukup — serangan 0 damage' : 'SP tidak cukup — serangan 0 damage')"
+                        :title="canAfford(a) ? '' : `SP tidak cukup (butuh ${a.cost})`"
                         @click="useAttack(a)"
                     >
                         <span class="flex items-center gap-2">
-                            <Wand2 v-if="a.kind === 'spell'" class="h-4 w-4 text-sky-500" />
-                            <Sword v-else class="h-4 w-4 text-amber-500" />
-                            {{ a.name }}
+                            <Sword class="h-4 w-4 text-amber-500" /> {{ a.name }}
                         </span>
                         <span class="flex items-center gap-2 text-xs">
                             <span class="text-muted-foreground">⚔{{ a.power }}</span>
-                            <span :class="canAfford(a) ? (a.resource === 'mp' ? 'text-indigo-500' : 'text-amber-600') : 'text-red-500'">
-                                {{ a.cost }} {{ a.resource === 'mp' ? 'MP' : 'SP' }}
-                            </span>
+                            <span :class="canAfford(a) ? 'text-amber-600' : 'text-red-500'">{{ a.cost }} SP</span>
                         </span>
                     </Button>
                 </div>
-                <p v-if="!attacks.length" class="text-sm text-muted-foreground">Kamu belum punya serangan apa pun.</p>
+                <p v-if="!physicalAttacks.length" class="text-sm text-muted-foreground">Belum ada skill fisik.</p>
+            </div>
+
+            <!-- Sihir (MP) -->
+            <div v-if="status === 'active'" class="rounded-xl border bg-card p-5">
+                <p class="mb-3 flex items-center gap-2 text-sm font-medium">
+                    <Wand2 class="h-4 w-4 text-indigo-500" /> Sihir
+                    <span class="text-xs font-normal text-muted-foreground">— memakai MP</span>
+                </p>
+                <div class="grid gap-2 sm:grid-cols-2">
+                    <Button
+                        v-for="a in magicAttacks"
+                        :key="a.kind + a.id"
+                        variant="outline"
+                        :disabled="acting || !canAfford(a)"
+                        class="h-auto justify-between py-3"
+                        :title="canAfford(a) ? '' : `MP tidak cukup (butuh ${a.cost})`"
+                        @click="useAttack(a)"
+                    >
+                        <span class="flex items-center gap-2">
+                            <Wand2 class="h-4 w-4 text-indigo-500" /> {{ a.name }}
+                        </span>
+                        <span class="flex items-center gap-2 text-xs">
+                            <span class="text-muted-foreground">✦{{ a.power }}</span>
+                            <span :class="canAfford(a) ? 'text-indigo-500' : 'text-red-500'">{{ a.cost }} MP</span>
+                        </span>
+                    </Button>
+                </div>
+                <p v-if="!magicAttacks.length" class="text-sm text-muted-foreground">
+                    Belum menguasai sihir — beli buku di Toko Sihir.
+                </p>
             </div>
 
             <!-- Potions -->

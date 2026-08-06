@@ -1,0 +1,8 @@
+{
+    "slug": "pedang-latihan",
+    "name": "Pedang Latihan",
+    "type": "weapon",
+    "description": "Bilah kayu ek berlapis besi tipis, tumpul di ujungnya. Dipakai murid-murid guild sebelum dipercaya memegang baja sungguhan.",
+    "stats": { "attack": 1, "req_level": 1 },
+    "value": 15
+}

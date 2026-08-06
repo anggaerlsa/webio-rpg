@@ -423,6 +423,8 @@ class StoryEngine
             'luck' => $character->luck,
             'attack' => $character->attack,
             'defense' => $character->defense,
+            'magic_attack' => $character->magic_attack,
+            'magic_defense' => $character->magic_defense,
             'gold' => $character->gold,
             'is_alive' => $character->is_alive,
             'avatar' => $character->avatar,

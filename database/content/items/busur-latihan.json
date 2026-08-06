@@ -1,0 +1,8 @@
+{
+    "slug": "busur-latihan",
+    "name": "Busur Panah Latihan",
+    "type": "weapon",
+    "description": "Busur pendek bertali rami yang tarikannya ringan. Anak panahnya berujung kain — cukup untuk sasaran jerami, cukup juga untuk goblin yang lengah.",
+    "stats": { "attack": 1, "req_level": 1 },
+    "value": 15
+}

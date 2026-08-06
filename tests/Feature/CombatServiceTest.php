@@ -147,29 +147,51 @@ class CombatServiceTest extends TestCase
         $res = $combat->act($session, 'skill', $s['skill']->id);
 
         $this->assertSame('sp', $res['used']['resource']);
+        $this->assertSame('fisik', $res['used']['attack_kind']);
         $this->assertSame(1, $res['used']['cost']);          // Pukul power 1 -> cost 1 (auto from power)
-        $this->assertFalse($res['used']['whiffed']);
         $this->assertGreaterThan(0, $res['used']['damage']);
         $this->assertSame(9, $res['player_sp']);             // 10 - 1
         $this->assertSame(9, $s['char']->fresh()->sp);       // persisted
     }
 
-    public function test_attack_with_empty_sp_deals_zero_damage(): void
+    public function test_attack_is_rejected_when_sp_is_not_enough(): void
     {
         $s = $this->scenario(charOverrides: ['sp' => 0]);
         $combat = app(CombatService::class);
         $combat->start($s['char'], $s['node']);
         $session = $s['char']->activeCombat()->first();
         $monsterBefore = $session->monster_hp;
+        $hpBefore = $session->player_hp;
 
-        $res = $combat->act($session, 'skill', $s['skill']->id);
+        try {
+            $combat->act($session, 'skill', $s['skill']->id);
+            $this->fail('Serangan tanpa SP seharusnya ditolak.');
+        } catch (HttpException $e) {
+            $this->assertSame(422, $e->getStatusCode());
+            $this->assertStringContainsString('SP tidak cukup', $e->getMessage());
+        }
 
-        $this->assertTrue($res['used']['whiffed']);
-        $this->assertSame(0, $res['used']['damage']);
-        $this->assertSame($monsterBefore, $res['monster_hp']); // monster takes no damage
-        $this->assertSame(0, $res['player_sp']);               // couldn't pay, stays 0
-        $this->assertNotNull($res['counter']);                 // but the monster still hits back
-        $this->assertSame('active', $res['status']);
+        // Giliran tidak terbuang: monster tak terluka, pemain tak dibalas.
+        $session->refresh();
+        $this->assertSame($monsterBefore, $session->monster_hp);
+        $this->assertSame($hpBefore, $session->player_hp);
+        $this->assertSame(0, $session->turn);
+        $this->assertSame(0, $s['char']->fresh()->sp);
+    }
+
+    public function test_spell_is_rejected_when_mp_is_not_enough(): void
+    {
+        $s = $this->scenario(charOverrides: ['mp' => 1]);
+        $spell = Spell::create(['slug' => 'bola-api', 'name' => 'Bola Api', 'element' => 'api', 'power' => 5, 'mana_cost' => 4, 'min_level' => 1]);
+        $s['char']->spells()->attach($spell->id);
+
+        $combat = app(CombatService::class);
+        $combat->start($s['char'], $s['node']);
+        $session = $s['char']->activeCombat()->first();
+
+        $this->expectException(HttpException::class);
+        $this->expectExceptionMessage('MP tidak cukup');
+        $combat->act($session, 'spell', $spell->id);
     }
 
     public function test_spell_consumes_mp(): void
@@ -361,5 +383,132 @@ class CombatServiceTest extends TestCase
 
         $this->expectException(HttpException::class);
         $combat->act($session->fresh(), 'skill', $s['skill']->id);
+    }
+
+    // ── Pemisahan jalur fisik vs sihir ──────────────────────────────────────
+
+    /** Lampirkan sebuah sihir ke karakter skenario. */
+    private function attachSpell(Character $char, int $power = 5, int $manaCost = 1): Spell
+    {
+        $spell = Spell::create([
+            'slug' => 'bola-api', 'name' => 'Bola Api', 'element' => 'api',
+            'power' => $power, 'mana_cost' => $manaCost, 'min_level' => 1,
+        ]);
+        $char->spells()->attach($spell->id);
+
+        return $spell;
+    }
+
+    public function test_armored_monster_blocks_skills_but_not_spells(): void
+    {
+        // Pertahanan fisik 10, pertahanan sihir 0 → jalur sihir lewat tanpa hambatan.
+        $s = $this->scenario(
+            charOverrides: ['sp' => 30, 'mp' => 30],
+            monsterOverrides: ['max_hp' => 99, 'defense' => 10, 'magic_defense' => 0],
+            skillPower: 5,
+        );
+        $spell = $this->attachSpell($s['char'], power: 5);
+        $combat = app(CombatService::class);
+        $combat->start($s['char'], $s['node']);
+        $session = $s['char']->activeCombat()->first();
+
+        $physical = $combat->act($session, 'skill', $s['skill']->id);
+        $magical = $combat->act($session->fresh(), 'spell', $spell->id);
+
+        $this->assertSame(1, $physical['used']['damage']);  // max(1, 5 - 10/2)
+        $this->assertSame('fisik', $physical['used']['attack_kind']);
+        $this->assertSame(5, $magical['used']['damage']);   // max(1, 5 - 0/2)
+        $this->assertSame('sihir', $magical['used']['attack_kind']);
+    }
+
+    public function test_magic_defense_reduces_spell_damage(): void
+    {
+        $s = $this->scenario(
+            charOverrides: ['mp' => 30],
+            monsterOverrides: ['max_hp' => 99, 'defense' => 0, 'magic_defense' => 6],
+        );
+        $spell = $this->attachSpell($s['char'], power: 5);
+        $combat = app(CombatService::class);
+        $combat->start($s['char'], $s['node']);
+        $session = $s['char']->activeCombat()->first();
+
+        $res = $combat->act($session, 'spell', $spell->id);
+
+        $this->assertSame(2, $res['used']['damage']); // max(1, 5 - 6/2)
+    }
+
+    public function test_gear_magic_attack_boosts_spells_only(): void
+    {
+        $s = $this->scenario(
+            charOverrides: ['sp' => 30, 'mp' => 30],
+            monsterOverrides: ['max_hp' => 99, 'defense' => 0, 'magic_defense' => 0],
+            skillPower: 5,
+        );
+        $spell = $this->attachSpell($s['char'], power: 5);
+
+        $wand = Item::create([
+            'slug' => 'tongkat-uji', 'name' => 'Tongkat Uji', 'type' => 'weapon',
+            'stats' => ['magic_attack' => 4], 'value' => 10,
+        ]);
+        $s['char']->items()->attach($wand->id, ['quantity' => 1]);
+        app(\App\Services\EquipmentService::class)->equip($s['char'], $wand);
+
+        $combat = app(CombatService::class);
+        $combat->start($s['char']->fresh(), $s['node']);
+        $session = $s['char']->activeCombat()->first();
+
+        $magical = $combat->act($session, 'spell', $spell->id);
+        $physical = $combat->act($session->fresh(), 'skill', $s['skill']->id);
+
+        $this->assertSame(9, $magical['used']['damage']);  // 5 + 4 dari magic_attack gear
+        $this->assertSame(5, $physical['used']['damage']); // fisik tidak ikut naik
+    }
+
+    public function test_a_spellcasting_monster_is_blocked_by_magic_defense_not_armor(): void
+    {
+        // Zirah fisik menumpuk (defense 100) tapi tak berguna melawan sihir.
+        $s = $this->scenario(
+            charOverrides: ['sp' => 30, 'defense' => 100, 'magic_defense' => 0],
+            monsterOverrides: ['max_hp' => 99, 'attack' => 99, 'magic_attack' => 10, 'attack_kind' => 'magic'],
+        );
+        $combat = app(CombatService::class);
+        $combat->start($s['char'], $s['node']);
+        $session = $s['char']->activeCombat()->first();
+
+        $res = $combat->act($session, 'skill', $s['skill']->id);
+
+        $this->assertSame('sihir', $res['counter']['kind']);
+        $this->assertSame(10, $res['counter']['damage']); // max(1, 10 - 0/2), zirah fisik diabaikan
+    }
+
+    public function test_magic_defense_softens_a_spellcasting_monster(): void
+    {
+        $s = $this->scenario(
+            charOverrides: ['sp' => 30, 'defense' => 0, 'magic_defense' => 20],
+            monsterOverrides: ['max_hp' => 99, 'magic_attack' => 10, 'attack_kind' => 'magic'],
+        );
+        $combat = app(CombatService::class);
+        $combat->start($s['char'], $s['node']);
+        $session = $s['char']->activeCombat()->first();
+
+        $res = $combat->act($session, 'skill', $s['skill']->id);
+
+        $this->assertSame(1, $res['counter']['damage']); // max(1, 10 - 20/2)
+    }
+
+    public function test_a_monster_flagged_magic_without_magic_attack_falls_back_to_physical(): void
+    {
+        $s = $this->scenario(
+            charOverrides: ['sp' => 30, 'defense' => 0, 'magic_defense' => 0],
+            monsterOverrides: ['max_hp' => 99, 'attack' => 8, 'magic_attack' => 0, 'attack_kind' => 'magic'],
+        );
+        $combat = app(CombatService::class);
+        $combat->start($s['char'], $s['node']);
+        $session = $s['char']->activeCombat()->first();
+
+        $res = $combat->act($session, 'skill', $s['skill']->id);
+
+        $this->assertSame('fisik', $res['counter']['kind']);
+        $this->assertSame(8, $res['counter']['damage']);
     }
 }

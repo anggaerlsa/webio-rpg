@@ -66,6 +66,9 @@ class MonsterController extends Controller
             'max_hp' => ['required', 'integer', 'min:1'],
             'attack' => ['required', 'integer', 'min:0'],
             'defense' => ['nullable', 'integer', 'min:0'],
+            'magic_attack' => ['nullable', 'integer', 'min:0'],
+            'magic_defense' => ['nullable', 'integer', 'min:0'],
+            'attack_kind' => ['nullable', Rule::in(['physical', 'magic'])],
             'xp_reward' => ['nullable', 'integer', 'min:0'],
             'gold_reward' => ['nullable', 'integer', 'min:0'],
             'loot' => ['nullable', 'string', function (string $attr, ?string $value, callable $fail) {
@@ -83,6 +86,9 @@ class MonsterController extends Controller
         ]);
 
         $data['defense'] = $data['defense'] ?? 0;
+        $data['magic_attack'] = $data['magic_attack'] ?? 0;
+        $data['magic_defense'] = $data['magic_defense'] ?? 0;
+        $data['attack_kind'] = $data['attack_kind'] ?? 'physical';
         $data['xp_reward'] = $data['xp_reward'] ?? 0;
         $data['gold_reward'] = $data['gold_reward'] ?? 0;
         $data['loot'] = ($data['loot'] ?? '') !== '' ? json_decode($data['loot'], true) : null;

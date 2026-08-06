@@ -17,6 +17,9 @@ interface Monster {
     max_hp: number;
     attack: number;
     defense: number;
+    magic_attack: number;
+    magic_defense: number;
+    attack_kind: string;
     xp_reward: number;
     gold_reward: number;
     loot: unknown;
@@ -33,6 +36,9 @@ const form = useForm({
     max_hp: props.monster?.max_hp ?? 5,
     attack: props.monster?.attack ?? 2,
     defense: props.monster?.defense ?? 0,
+    magic_attack: props.monster?.magic_attack ?? 0,
+    magic_defense: props.monster?.magic_defense ?? 0,
+    attack_kind: props.monster?.attack_kind ?? 'physical',
     xp_reward: props.monster?.xp_reward ?? 20,
     gold_reward: props.monster?.gold_reward ?? 5,
     loot: props.monster?.loot ? JSON.stringify(props.monster.loot, null, 2) : '',
@@ -102,6 +108,31 @@ const fieldClass = 'w-full rounded-md border border-input bg-background px-3 py-
                             <Input id="defense" v-model.number="form.defense" type="number" min="0" />
                         </div>
                     </div>
+
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="grid gap-2">
+                            <Label for="magic_attack">Serangan Sihir</Label>
+                            <Input id="magic_attack" v-model.number="form.magic_attack" type="number" min="0" />
+                            <InputError :message="form.errors.magic_attack" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="magic_defense">Pertahanan Sihir</Label>
+                            <Input id="magic_defense" v-model.number="form.magic_defense" type="number" min="0" />
+                            <InputError :message="form.errors.magic_defense" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="attack_kind">Jalur Serangan</Label>
+                            <select id="attack_kind" v-model="form.attack_kind" :class="fieldClass">
+                                <option value="physical">Fisik (ditahan Pertahanan pemain)</option>
+                                <option value="magic">Sihir (ditahan Pertahanan Sihir pemain)</option>
+                            </select>
+                            <InputError :message="form.errors.attack_kind" />
+                        </div>
+                    </div>
+                    <p class="-mt-2 text-xs text-muted-foreground">
+                        Jalur <b>Sihir</b> memakai nilai <b>Serangan Sihir</b> saat menyerang balik — isi lebih dari 0, kalau
+                        tidak monster otomatis kembali menyerang secara fisik.
+                    </p>
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2">

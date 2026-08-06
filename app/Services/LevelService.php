@@ -42,6 +42,9 @@ class LevelService
             $character->max_mp += 4;
             $character->attack += 2;
             $character->defense += 1;
+            // Jalur sihir tumbuh sejajar jalur fisik.
+            $character->magic_attack += 2;
+            $character->magic_defense += 1;
 
             // Atribut RPG naik tiap level (semua +1) — progresi terasa.
             $character->strength += 1;

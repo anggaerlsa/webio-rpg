@@ -9,6 +9,9 @@ use App\Models\Monster;
 use App\Models\QuestNode;
 use App\Models\Skill;
 use App\Models\Spell;
+use App\Services\Combat\AttackModule;
+use App\Services\Combat\MagicalAttack;
+use App\Services\Combat\PhysicalAttack;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -19,9 +22,9 @@ use Illuminate\Support\Facades\DB;
  */
 class CombatService
 {
-    // Seberapa besar tiap atribut RPG memengaruhi pertarungan (semua tunable).
-    private const PHYS_PER_STR = 0.02;   // +2% damage fisik per STR
-    private const MAGIC_PER_INT = 0.02;  // +2% damage sihir per INT
+    // Efek atribut yang berlaku untuk SEMUA jalur serangan (tunable). Yang khas
+    // per jalur (STR/INT, attack/magic_attack, defense/magic_defense) tinggal di
+    // modulnya masing-masing: App\Services\Combat\{Physical,Magical}Attack.
     private const DODGE_PER_AGI = 0.01;  // +1% peluang menghindar per AGI
     private const CRIT_PER_DEX = 0.01;   // +1% peluang kritikal per DEX
     private const CRIT_PER_LUK = 0.005;  // +0.5% peluang kritikal per LUK
@@ -32,7 +35,15 @@ class CombatService
         private LevelService $levels,
         private StoryEngine $story,
         private EquipmentService $equipment,
+        private PhysicalAttack $physical,
+        private MagicalAttack $magical,
     ) {}
+
+    /** Modul jalur serangan berdasarkan resource-nya ('sp' → fisik, 'mp' → sihir). */
+    private function module(string $resource): AttackModule
+    {
+        return $resource === 'mp' ? $this->magical : $this->physical;
+    }
 
     /** Poin atribut efektif: stat 1 = baseline (efek 0); tiap poin DI ATAS 1 baru berpengaruh. */
     private function bonusStat(int $value): int
@@ -54,58 +65,63 @@ class CombatService
         return min(1.0, $this->bonusStat($eff['dexterity']) * self::CRIT_PER_DEX + $this->bonusStat($eff['luck']) * self::CRIT_PER_LUK);
     }
 
-    /** Pertahanan efektif = defense (dasar + equipment) + bonus VIT efektif. */
-    private function effectiveDefense(Character $c): int
-    {
-        $eff = $this->equipment->effective($c);
-
-        return $eff['defense'] + $this->bonusStat($eff['vitality']);
-    }
-
     /**
-     * Damage serangan pemain ke monster: power diskala STR (fisik) / INT (sihir)
-     * efektif, plus bonus attack equipment (fisik), lalu mungkin kritikal,
-     * dikurangi pertahanan monster. Minimal 1 bila kena.
+     * Damage serangan pemain ke monster: modul jalurnya menghitung damage mentah
+     * (skala atribut + bonus perlengkapan jalur itu), lalu mungkin kritikal,
+     * dikurangi pertahanan monster pada jalur yang sama. Minimal 1 bila kena.
      *
-     * @return array{damage: int, crit: bool}
+     * @return array{damage: int, crit: bool, kind: string}
      */
     private function attackDamage(Character $c, array $ability, Monster $monster): array
     {
-        $eff = $this->equipment->effective($c);
-        $isMagic = $ability['resource'] === 'mp';
+        $module = $this->module($ability['resource']);
 
-        $mult = $isMagic
-            ? 1 + $this->bonusStat($eff['intelligence']) * self::MAGIC_PER_INT
-            : 1 + $this->bonusStat($eff['strength']) * self::PHYS_PER_STR;
-
-        $raw = (int) floor($ability['power'] * $mult);
-
-        // Senjata/perlengkapan menambah attack pada serangan fisik (porsi bonus saja).
-        if (! $isMagic) {
-            $raw += max(0, $eff['attack'] - (int) $c->attack);
-        }
+        $raw = $module->playerDamage($c, (int) $ability['power']);
 
         $crit = $this->rollChance($this->critChance($c));
         if ($crit) {
             $raw = (int) floor($raw * self::CRIT_MULTIPLIER);
         }
 
-        return ['damage' => max(1, $raw - intdiv($monster->defense, 2)), 'crit' => $crit];
+        return [
+            'damage' => max(1, $raw - intdiv($module->monsterDefense($monster), 2)),
+            'crit' => $crit,
+            'kind' => $module->label(),
+        ];
     }
 
     /**
-     * Serangan balik monster ke pemain, dengan peluang dihindari (AGI) dan
-     * direduksi pertahanan (defense + VIT).
+     * Jalur serangan balik sebuah monster. Sihir hanya dipakai bila memang
+     * disetel sebagai penyihir DAN punya kekuatan sihir — kalau tidak, jatuh ke
+     * fisik supaya monster tanpa data sihir tidak jadi tak berbahaya.
+     */
+    private function monsterModule(Monster $monster): AttackModule
+    {
+        $isMagic = $monster->attack_kind === 'magic' && (int) $monster->magic_attack > 0;
+
+        return $this->module($isMagic ? 'mp' : 'sp');
+    }
+
+    /**
+     * Serangan balik monster ke pemain: dihitung modul sesuai jalur monster,
+     * bisa dihindari (AGI), direduksi pertahanan jalur itu (fisik: defense+VIT,
+     * sihir: magic_defense+INT).
      *
-     * @return array{damage: int, dodged: bool}
+     * @return array{damage: int, dodged: bool, kind: string}
      */
     private function monsterCounter(Character $c, Monster $monster): array
     {
+        $module = $this->monsterModule($monster);
+
         if ($this->rollChance($this->dodgeChance($c))) {
-            return ['damage' => 0, 'dodged' => true];
+            return ['damage' => 0, 'dodged' => true, 'kind' => $module->label()];
         }
 
-        return ['damage' => max(1, $monster->attack - intdiv($this->effectiveDefense($c), 2)), 'dodged' => false];
+        return [
+            'damage' => max(1, $module->monsterPower($monster) - intdiv($module->playerDefense($c), 2)),
+            'dodged' => false,
+            'kind' => $module->label(),
+        ];
     }
 
     /** Lempar dadu peluang. 0 = tak pernah, ≥1 = selalu (mempermudah uji & kasus ekstrem). */
@@ -178,24 +194,21 @@ class CombatService
             $monster = $session->monster;
             $ability = $this->resolveAbility($character, $kind, $abilityId);
 
-            // 1) Player attacks — pay the SP (physical) / MP (magic) cost first.
-            //    If the resource is exhausted, the blow still swings but lands for 0.
+            // 1) Pemain menyerang — bayar SP (fisik) / MP (sihir) lebih dulu.
+            //    Resource kurang → serangan DITOLAK; giliran tidak terbuang.
             $resource = $ability['resource']; // 'sp' | 'mp'
             $cost = $ability['cost'];
-            $canPay = $character->{$resource} >= $cost;
-            if ($canPay) {
-                $character->{$resource} = $character->{$resource} - $cost;
-            }
+            $have = (int) $character->{$resource};
+            abort_if(
+                $have < $cost,
+                422,
+                strtoupper($resource)." tidak cukup untuk {$ability['name']} — butuh {$cost}, punya {$have}.",
+            );
+            $character->{$resource} = $have - $cost;
 
-            // Damage diskala STR/INT + kemungkinan kritikal (DEX/LUK). Bila resource habis → 0.
-            $crit = false;
-            if ($canPay) {
-                $hit = $this->attackDamage($character, $ability, $monster);
-                $dmgToMonster = $hit['damage'];
-                $crit = $hit['crit'];
-            } else {
-                $dmgToMonster = 0;
-            }
+            // Damage dihitung modul jalurnya + kemungkinan kritikal (DEX/LUK).
+            $hit = $this->attackDamage($character, $ability, $monster);
+            $dmgToMonster = $hit['damage'];
             $session->monster_hp = max(0, $session->monster_hp - $dmgToMonster);
             $session->turn += 1;
 
@@ -203,7 +216,7 @@ class CombatService
                 'used' => [
                     'kind' => $kind, 'id' => $ability['id'], 'name' => $ability['name'],
                     'damage' => $dmgToMonster, 'cost' => $cost, 'resource' => $resource,
-                    'whiffed' => ! $canPay, 'crit' => $crit,
+                    'attack_kind' => $hit['kind'], 'crit' => $hit['crit'],
                 ],
                 'counter' => null,
             ];

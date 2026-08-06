@@ -1,0 +1,8 @@
+{
+    "slug": "belati-latihan",
+    "name": "Belati Latihan",
+    "type": "weapon",
+    "description": "Belati kayu keras seukuran telapak, sisinya dibulatkan supaya tidak melukai kawan sparring. Ringan, cepat, dan mudah disembunyikan di balik ikat pinggang.",
+    "stats": { "attack": 1, "req_level": 1 },
+    "value": 12
+}

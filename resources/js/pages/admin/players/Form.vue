@@ -13,7 +13,7 @@ interface CharacterData {
     class: string | null;
     level: number; xp: number; gold: number;
     hp: number; max_hp: number; sp: number; max_sp: number; mp: number; max_mp: number;
-    attack: number; defense: number;
+    attack: number; defense: number; magic_attack: number; magic_defense: number;
     strength: number; agility: number; dexterity: number; intelligence: number; vitality: number; luck: number;
     rank: string | null;
 }
@@ -52,6 +52,7 @@ const charGroups: { title: string; fields: { key: keyof CharacterData; label: st
     ] },
     { title: 'Tempur', fields: [
         { key: 'attack', label: 'Serangan' }, { key: 'defense', label: 'Pertahanan' },
+        { key: 'magic_attack', label: 'Serangan Sihir' }, { key: 'magic_defense', label: 'Pertahanan Sihir' },
     ] },
     { title: 'Atribut', fields: [
         { key: 'strength', label: 'STR' }, { key: 'agility', label: 'AGI' }, { key: 'dexterity', label: 'DEX' },
