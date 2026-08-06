@@ -102,6 +102,15 @@ class QuestTemplateTest extends TestCase
         $this->assertSame([], $nodes['win']['payload']);
     }
 
+    public function test_non_array_reward_is_rejected_with_a_runtime_exception_not_a_type_error(): void
+    {
+        $quest = $this->huntQuest(['reward' => 'oops']);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('tikus-gudang');
+        QuestTemplate::expand($quest);
+    }
+
     public function test_monster_without_a_name_falls_back_to_its_slug_for_the_title(): void
     {
         $quest = $this->huntQuest(['monster' => ['slug' => 'tikus-raksasa', 'level' => 1]]);
@@ -166,6 +175,27 @@ class QuestTemplateTest extends TestCase
         $this->assertSame('Guild mencatat namamu di papan jasa.', $nodes['ending_win']['body']);
     }
 
+    public function test_win_title_beats_outro_in_ending_when_there_is_no_reward(): void
+    {
+        // Tanpa reward, prosa `win` (lebih spesifik) yang dipakai di ending —
+        // `outro` didiamkan meski ditulis, bukan malah menimpa.
+        $quest = $this->huntQuest([
+            'win' => ['title' => 'Tikus Tumpas', 'body' => 'Tikus itu ambruk, ekornya berhenti bergerak.'],
+            'outro' => 'Guild mencatat namamu di papan jasa dengan tinta emas.',
+        ]);
+        unset($quest['hunt']['reward']);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame('Tikus Tumpas', $nodes['ending_win']['title']);
+        $this->assertSame('Tikus itu ambruk, ekornya berhenti bergerak.', $nodes['ending_win']['body']);
+
+        foreach ($nodes as $node) {
+            $this->assertStringNotContainsString('Guild mencatat namamu di papan jasa dengan tinta emas.', (string) ($node['title'] ?? ''));
+            $this->assertStringNotContainsString('Guild mencatat namamu di papan jasa dengan tinta emas.', (string) ($node['body'] ?? ''));
+        }
+    }
+
     public function test_mixing_shorthand_with_long_form_nodes_is_rejected(): void
     {
         $quest = $this->huntQuest();
@@ -173,6 +203,46 @@ class QuestTemplateTest extends TestCase
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('tidak bisa dicampur');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_mixing_shorthand_with_top_level_monsters_is_rejected(): void
+    {
+        $quest = $this->huntQuest();
+        $quest['monsters'] = [['slug' => 'siluman', 'name' => 'Siluman', 'level' => 1]];
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('tidak bisa dicampur');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_mixing_shorthand_with_top_level_start_node_is_rejected(): void
+    {
+        $quest = $this->huntQuest();
+        $quest['start_node'] = 'intro';
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('tidak bisa dicampur');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_unknown_key_inside_hunt_is_rejected(): void
+    {
+        // Salah tulis `rewards` (jamak) — dulu diam-diam diabaikan, pemain
+        // tidak dapat apa-apa tanpa ada error.
+        $quest = $this->huntQuest(['rewards' => ['xp' => 15, 'gold' => 15]]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('rewards');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_unknown_key_inside_errand_is_rejected(): void
+    {
+        $quest = $this->errandQuest(['catatan' => 'field yang tidak ada di arketipe ini']);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('tak dikenal');
         QuestTemplate::expand($quest);
     }
 

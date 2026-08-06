@@ -118,6 +118,15 @@ class MonsterScalingTest extends TestCase
         ]);
     }
 
+    public function test_attack_kind_must_be_physical_or_magic(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('attack_kind');
+        $this->upsertMonster([
+            'slug' => 'attack-kind-salah', 'name' => 'Attack Kind Salah', 'level' => 1, 'attack_kind' => 'magik',
+        ]);
+    }
+
     public function test_explicit_zero_beats_a_nonzero_formula_value(): void
     {
         // Level 3: rumus defense = intdiv(2, 2) = 1. `isset()` harus tetap

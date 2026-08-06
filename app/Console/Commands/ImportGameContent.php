@@ -17,9 +17,9 @@ use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 /**
- * Import game content (quests, nodes, monsters, questions, items) from the JSON
+ * Import game content (quests, nodes, monsters, items) from the JSON
  * files in database/content. Idempotent: natural keys (slug / quest+key) upsert,
- * and child rows (choices/questions) are replaced so re-running converges.
+ * and child rows (choices) are replaced so re-running converges.
  */
 class ImportGameContent extends Command
 {
@@ -227,6 +227,10 @@ class ImportGameContent extends Command
 
         if (isset($data['loot']) && ! is_array($data['loot'])) {
             throw new RuntimeException("Monster `{$slug}`: `loot` harus berupa array.");
+        }
+
+        if (isset($data['attack_kind']) && ! in_array($data['attack_kind'], ['physical', 'magic'], true)) {
+            throw new RuntimeException("Monster `{$slug}`: `attack_kind` harus `physical` atau `magic`.");
         }
 
         // Rumus level jadi dasar; field yang ditulis eksplisit menimpanya.

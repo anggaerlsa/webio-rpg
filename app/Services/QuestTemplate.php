@@ -17,6 +17,12 @@ class QuestTemplate
     /** Arketipe yang dikenali. */
     private const SHAPES = ['hunt', 'errand'];
 
+    /** Field yang boleh muncul di blok `hunt`. Salah tulis harus gagal keras. */
+    private const HUNT_FIELDS = ['monster', 'intro', 'fight', 'win', 'lose', 'outro', 'reward'];
+
+    /** Field yang boleh muncul di blok `errand`. Salah tulis harus gagal keras. */
+    private const ERRAND_FIELDS = ['beats', 'win', 'outro', 'reward'];
+
     private const DEFAULT_LOSE = 'Kau tumbang. Pulihkan diri lalu coba lagi.';
 
     private const DEFAULT_OUTRO = 'Tugas selesai. Laporkan hasilnya ke guild.';
@@ -36,8 +42,13 @@ class QuestTemplate
         if ($shapes === []) {
             return $quest; // long-form, biarkan apa adanya
         }
-        if (isset($quest['nodes'])) {
-            throw new RuntimeException("Misi `{$slug}`: bentuk ringkas tidak bisa dicampur dengan `nodes`.");
+
+        $reserved = array_values(array_filter(
+            ['nodes', 'monsters', 'start_node'],
+            fn (string $k) => isset($quest[$k])
+        ));
+        if ($reserved !== []) {
+            throw new RuntimeException("Misi `{$slug}`: bentuk ringkas tidak bisa dicampur dengan `".implode('`, `', $reserved).'`.');
         }
 
         $shape = $shapes[0];
@@ -45,6 +56,13 @@ class QuestTemplate
         if (! is_array($body)) {
             throw new RuntimeException("Misi `{$slug}`: `{$shape}` harus berupa objek.");
         }
+
+        $allowed = $shape === 'hunt' ? self::HUNT_FIELDS : self::ERRAND_FIELDS;
+        $unknown = array_diff(array_keys($body), $allowed);
+        if ($unknown !== []) {
+            throw new RuntimeException("Misi `{$slug}`: `{$shape}` punya field tak dikenal — ".implode(', ', $unknown).'.');
+        }
+
         unset($quest[$shape]);
 
         $title = (string) ($quest['title'] ?? $slug);
@@ -75,9 +93,8 @@ class QuestTemplate
         $lose = self::prose($slug, 'hunt.lose', $hunt['lose'] ?? null, required: false);
         $outro = self::prose($slug, 'hunt.outro', $hunt['outro'] ?? null, required: false);
 
-        // Presence-based, bukan truthy — `"reward": {}` (array kosong) tetap dianggap ada.
-        $hasReward = array_key_exists('reward', $hunt) && $hunt['reward'] !== null;
-        $reward = $hasReward ? $hunt['reward'] : null;
+        $reward = self::reward($slug, 'hunt', $hunt);
+        $hasReward = $reward !== null;
         $afterFight = $hasReward ? 'win' : 'ending_win';
 
         $nodes = [
@@ -131,9 +148,8 @@ class QuestTemplate
         $win = self::prose($slug, 'errand.win', $errand['win'] ?? null);
         $outro = self::prose($slug, 'errand.outro', $errand['outro'] ?? null, required: false);
 
-        // Presence-based, bukan truthy — `"reward": {}` (array kosong) tetap dianggap ada.
-        $hasReward = array_key_exists('reward', $errand) && $errand['reward'] !== null;
-        $reward = $hasReward ? $errand['reward'] : null;
+        $reward = self::reward($slug, 'errand', $errand);
+        $hasReward = $reward !== null;
         $afterBeats = $hasReward ? 'win' : 'ending_win';
 
         $nodes = [];
@@ -161,6 +177,28 @@ class QuestTemplate
         $nodes[] = self::endingWin($win, $outro, hasReward: $hasReward);
 
         return ['start_node' => 'beat_1', 'nodes' => $nodes, 'monsters' => []];
+    }
+
+    /**
+     * Ambil payload `reward` dari body arketipe. Presence-based, bukan
+     * truthy — `"reward": {}` (array kosong) tetap dianggap ada; key hilang
+     * atau bernilai `null` berarti tidak ada reward. Nilai lain (string,
+     * angka, dst.) ditolak keras di sini supaya penulis konten dapat pesan
+     * yang jelas, bukan `TypeError` mentah dari `rewardNode()`.
+     *
+     * @param  array<string, mixed>  $body
+     * @return array<string, mixed>|null
+     */
+    private static function reward(string $slug, string $shape, array $body): ?array
+    {
+        if (! array_key_exists('reward', $body) || $body['reward'] === null) {
+            return null;
+        }
+        if (! is_array($body['reward'])) {
+            throw new RuntimeException("Misi `{$slug}`: `{$shape}.reward` harus berupa objek.");
+        }
+
+        return $body['reward'];
     }
 
     /**

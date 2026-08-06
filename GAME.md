@@ -123,7 +123,7 @@ php artisan game:import            # idempoten (upsert by slug / quest+key)
 php artisan game:import --fresh     # bersihkan konten + progres, lalu impor ulang
 ```
 - `database/content/quests/*.json` — quest: `nodes[]` (narrative/choice/combat/reward/ending),
-  tiap node punya `choices[]` (`requirements`/`effects`), plus `monsters[]` dengan `questions[]`.
+  tiap node punya `choices[]` (`requirements`/`effects`), plus `monsters[]`.
 - `database/content/items/*.json` — katalog item.
 - Pertanyaan combat: `kind: "tactical"` (pilihan aksi) atau `"trivia"` (teka-teki).
 - Contoh lengkap: `database/content/quests/goblin-cave.json`.
