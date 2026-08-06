@@ -128,6 +128,16 @@ php artisan game:import --fresh     # bersihkan konten + progres, lalu impor ula
 - Pertanyaan combat: `kind: "tactical"` (pilihan aksi) atau `"trivia"` (teka-teki).
 - Contoh lengkap: `database/content/quests/goblin-cave.json`.
 
+### Bentuk misi ringkas (`hunt` / `errand`)
+Misi berpola tidak perlu ditulis node-per-node. Dua arketipe dikembangkan `App\Services\QuestTemplate` saat `game:import`:
+- **`hunt`** — `intro` → `fight` → `win` (reward) → `ending_win`, plus ending `lose`. Wajib: `monster` (dengan `slug`), `intro`, `fight`, `win`. Opsional: `lose`, `outro`, `reward`.
+- **`errand`** — `beats[]` dirantai berurutan → `win` (reward) → `ending_win`. Tanpa ending kalah. Wajib: `beats` (minimal satu), `win`.
+- Tanpa `reward`, node reward tidak dibuat dan prosa `win` pindah ke ending. Deteksi berbasis **keberadaan key**, bukan isinya: `"reward": {}` tetap membuat node reward; key `reward` hilang atau bernilai `null` yang tidak.
+- Tiap field prosa menerima string **atau** `{"title": "...", "body": "..."}` untuk menimpa judul default (judul `intro`/beat = judul misi, `fight` = nama monster + "!", `win` = "Berhasil", `ending_win` = "Misi Tuntas", `lose` = "Kalah").
+- **Monster cukup `{"slug", "name", "level"}`** — stat diturunkan `Monster::statsForLevel()` (lv1 = hp 3 / atk 1 / def 0 / xp 30 / emas 10, naik linear). Field stat yang ditulis eksplisit selalu menimpa rumus; field tak dikenal (mis. `magik_attack`) membuat import gagal.
+- Misi **bercabang** tetap ditulis long-form (`nodes`) — lihat `goblin-cave.json`, `patroli-tembok.json`, dan `antar-surat.json`. Bentuk ringkas dan `nodes` tidak boleh dicampur dalam satu file.
+- Contoh ringkas: `tikus-gudang.json` (hunt) & `kabar-desa.json` (errand).
+
 ## Panel Admin — superadmin
 - Akses di **`/admin`** (hanya user dengan `role = superadmin`; lainnya kena 403). Tautan muncul di Beranda & sidebar.
 - CRUD penuh (UI Bahasa Indonesia) untuk: **Items**, **Skill**, **Sihir**, **Monster**, **Misi → Adegan (Node) → Pilihan** (editor cerita bertingkat; Misi punya **Guild Penyelenggara** + **Rank Minimal**), **Rank** (ambang naik rank), **Forum** (kategori Balai Warta), **Dunia** (lokasi, lihat di bawah), dan **Pemain**. Field JSON diisi via textarea. Skill/Sihir punya `power` (damage) & flag *default*.
@@ -177,7 +187,7 @@ php artisan game:import --fresh     # bersihkan konten + progres, lalu impor ula
 
 ## Test
 ```powershell
-php artisan test     # 165 test (auth bawaan + CombatService/StoryEngine/GameFlow/Admin/World/Inventory/Profil/Pemain/Town/RankMission/Equipment/Learning/FriendChat/Forum)
+php artisan test     # 206 test (auth bawaan + CombatService/StoryEngine/GameFlow/Admin/World/Inventory/Profil/Pemain/Town/RankMission/Equipment/Learning/FriendChat/Forum/QuestTemplate)
 ```
 Test memakai SQLite in-memory — **tidak** menyentuh database `webio`.
 
