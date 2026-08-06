@@ -9,6 +9,7 @@ use App\Models\Quest;
 use App\Models\QuestNode;
 use App\Models\Skill;
 use App\Models\Spell;
+use App\Services\QuestTemplate;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -131,6 +132,10 @@ class ImportGameContent extends Command
     private function importQuests(string $dir): void
     {
         foreach ($this->jsonFiles($dir) as $data) {
+            // Bentuk ringkas (hunt/errand) dikembangkan jadi node long-form dulu,
+            // supaya sisa jalur di bawah ini tidak perlu tahu template itu ada.
+            $data = QuestTemplate::expand($data);
+
             // Embedded monsters first so nodes can resolve monster_id by slug.
             foreach ($data['monsters'] ?? [] as $monsterData) {
                 $this->upsertMonster($monsterData);
