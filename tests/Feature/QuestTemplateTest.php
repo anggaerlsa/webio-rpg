@@ -220,4 +220,115 @@ class QuestTemplateTest extends TestCase
         $this->expectExceptionMessage('harus berupa objek');
         QuestTemplate::expand(['slug' => 'rusak', 'title' => 'Rusak', 'hunt' => 'bukan objek']);
     }
+
+    private function errandQuest(array $overrides = []): array
+    {
+        return [
+            'slug' => 'antar-kabar',
+            'title' => 'Antar Kabar',
+            'affiliation' => 'merchant',
+            'errand' => array_merge([
+                'beats' => [
+                    'Juru tulis menyerahkan surat bersegel lilin merah.',
+                    'Jalan berdebu menuju desa sepi. Tak ada yang mengganggumu.',
+                ],
+                'win' => 'Surat sampai di tangan yang benar. Bayaran diserahkan.',
+                'reward' => ['xp' => 10, 'gold' => 20],
+            ], $overrides),
+        ];
+    }
+
+    public function test_errand_chains_its_beats_in_order(): void
+    {
+        $expanded = QuestTemplate::expand($this->errandQuest());
+        $nodes = $this->nodesByKey($expanded);
+
+        $this->assertSame('beat_1', $expanded['start_node']);
+        $this->assertSame(['beat_1', 'beat_2', 'win', 'ending_win'], array_keys($nodes));
+
+        $this->assertSame('narrative', $nodes['beat_1']['type']);
+        $this->assertSame('beat_2', $nodes['beat_1']['choices'][0]['next']);
+        $this->assertSame('Lanjutkan', $nodes['beat_1']['choices'][0]['label']);
+        $this->assertSame('win', $nodes['beat_2']['choices'][0]['next']);
+        $this->assertSame('victory', $nodes['ending_win']['payload']['result']);
+        $this->assertSame([], $expanded['monsters']);
+        $this->assertArrayNotHasKey('errand', $expanded);
+    }
+
+    public function test_errand_has_no_defeat_ending(): void
+    {
+        $nodes = $this->nodesByKey(QuestTemplate::expand($this->errandQuest()));
+
+        $this->assertArrayNotHasKey('lose', $nodes);
+    }
+
+    public function test_errand_without_reward_ends_after_the_last_beat(): void
+    {
+        $quest = $this->errandQuest();
+        unset($quest['errand']['reward']);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame(['beat_1', 'beat_2', 'ending_win'], array_keys($nodes));
+        $this->assertSame('ending_win', $nodes['beat_2']['choices'][0]['next']);
+        $this->assertSame('Surat sampai di tangan yang benar. Bayaran diserahkan.', $nodes['ending_win']['body']);
+    }
+
+    public function test_a_single_beat_errand_works(): void
+    {
+        $quest = $this->errandQuest(['beats' => ['Kau menyampaikan pesan singkat itu.']]);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame(['beat_1', 'win', 'ending_win'], array_keys($nodes));
+        $this->assertSame('win', $nodes['beat_1']['choices'][0]['next']);
+    }
+
+    public function test_errand_beat_titles_default_to_the_quest_title(): void
+    {
+        $nodes = $this->nodesByKey(QuestTemplate::expand($this->errandQuest()));
+
+        $this->assertSame('Antar Kabar', $nodes['beat_1']['title']);
+        $this->assertSame('Antar Kabar', $nodes['beat_2']['title']);
+    }
+
+    public function test_errand_beat_accepts_object_prose(): void
+    {
+        $quest = $this->errandQuest([
+            'beats' => [['title' => 'Meja Juru Tulis', 'body' => 'Gulungan tipis berpindah tangan.']],
+        ]);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame('Meja Juru Tulis', $nodes['beat_1']['title']);
+        $this->assertSame('Gulungan tipis berpindah tangan.', $nodes['beat_1']['body']);
+    }
+
+    public function test_empty_beats_is_rejected(): void
+    {
+        $quest = $this->errandQuest(['beats' => []]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('`errand.beats` wajib');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_blank_beat_prose_is_rejected(): void
+    {
+        $quest = $this->errandQuest(['beats' => ['  ']]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('errand.beats');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_mixing_two_archetypes_is_rejected(): void
+    {
+        $quest = $this->huntQuest();
+        $quest['errand'] = ['beats' => ['Apa pun.'], 'win' => 'Selesai.'];
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('salah satu');
+        QuestTemplate::expand($quest);
+    }
 }

@@ -15,7 +15,7 @@ use RuntimeException;
 class QuestTemplate
 {
     /** Arketipe yang dikenali. */
-    private const SHAPES = ['hunt'];
+    private const SHAPES = ['hunt', 'errand'];
 
     private const DEFAULT_LOSE = 'Kau tumbang. Pulihkan diri lalu coba lagi.';
 
@@ -49,7 +49,11 @@ class QuestTemplate
 
         $title = (string) ($quest['title'] ?? $slug);
 
-        return array_merge($quest, self::hunt($slug, $title, $body));
+        $expanded = $shape === 'hunt'
+            ? self::hunt($slug, $title, $body)
+            : self::errand($slug, $title, $body);
+
+        return array_merge($quest, $expanded);
     }
 
     /**
@@ -108,6 +112,55 @@ class QuestTemplate
         ];
 
         return ['start_node' => 'intro', 'nodes' => $nodes, 'monsters' => [$monster]];
+    }
+
+    /**
+     * Rangkaian narasi tanpa tarung: beat_1..beat_n → (win) → ending_win.
+     * Tidak punya ending kalah karena tidak ada yang bisa mengalahkan pemain.
+     *
+     * @param  array<string, mixed>  $errand
+     * @return array<string, mixed>
+     */
+    private static function errand(string $slug, string $title, array $errand): array
+    {
+        $beats = $errand['beats'] ?? null;
+        if (! is_array($beats) || $beats === []) {
+            throw new RuntimeException("Misi `{$slug}`: `errand.beats` wajib berisi minimal satu adegan.");
+        }
+
+        $win = self::prose($slug, 'errand.win', $errand['win'] ?? null);
+        $outro = self::prose($slug, 'errand.outro', $errand['outro'] ?? null, required: false);
+
+        // Presence-based, bukan truthy — `"reward": {}` (array kosong) tetap dianggap ada.
+        $hasReward = array_key_exists('reward', $errand) && $errand['reward'] !== null;
+        $reward = $hasReward ? $errand['reward'] : null;
+        $afterBeats = $hasReward ? 'win' : 'ending_win';
+
+        $nodes = [];
+        $beats = array_values($beats);
+        $count = count($beats);
+        foreach ($beats as $i => $raw) {
+            $n = $i + 1;
+            $beat = self::prose($slug, "errand.beats[{$i}]", $raw);
+            $nodes[] = [
+                'key' => "beat_{$n}",
+                'type' => 'narrative',
+                'title' => $beat['title'] ?? $title,
+                'body' => $beat['body'],
+                'choices' => [[
+                    'label' => 'Lanjutkan',
+                    'next' => $n < $count ? 'beat_'.($n + 1) : $afterBeats,
+                ]],
+            ];
+        }
+
+        if ($hasReward) {
+            $nodes[] = self::rewardNode($win, $reward);
+        }
+
+        $nodes[] = self::endingWin($win, $outro, hasReward: $hasReward);
+
+        return ['start_node' => 'beat_1', 'nodes' => $nodes, 'monsters' => []];
     }
 
     /**
