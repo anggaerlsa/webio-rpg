@@ -151,6 +151,18 @@ class QuestTemplateTest extends TestCase
         $this->assertSame('Lanjutkan', $nodes['win']['choices'][0]['label']);
     }
 
+    public function test_blank_label_or_title_falls_back_instead_of_rendering_empty(): void
+    {
+        $quest = $this->huntQuest([
+            'intro' => ['title' => '   ', 'label' => '', 'body' => 'Bau apek menyambutmu.'],
+        ]);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame('Hadapi', $nodes['intro']['choices'][0]['label']); // bukan tombol kosong
+        $this->assertSame('Tikus Gudang', $nodes['intro']['title']);         // bukan judul kosong
+    }
+
     public function test_object_prose_overrides_the_default_title(): void
     {
         $quest = $this->huntQuest([

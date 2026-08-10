@@ -204,7 +204,7 @@ class QuestTemplate
     /**
      * Node reward yang mengalir otomatis ke ending sukses.
      *
-     * @param  array{title: ?string, body: ?string}  $win
+     * @param  array{title: ?string, body: ?string, label: ?string}  $win
      * @param  array<string, mixed>  $reward
      * @return array<string, mixed>
      */
@@ -225,8 +225,8 @@ class QuestTemplate
      * sana, jadi ending memakai `outro` (atau teks default). Bila tidak, prosa
      * `win` pindah ke ending supaya tidak hilang.
      *
-     * @param  array{title: ?string, body: ?string}  $win
-     * @param  array{title: ?string, body: ?string}  $outro
+     * @param  array{title: ?string, body: ?string, label: ?string}  $win
+     * @param  array{title: ?string, body: ?string, label: ?string}  $outro
      * @return array<string, mixed>
      */
     private static function endingWin(array $win, array $outro, bool $hasReward): array
@@ -254,9 +254,11 @@ class QuestTemplate
         }
 
         if (is_array($value)) {
-            $title = isset($value['title']) ? (string) $value['title'] : null;
+            // Judul & label kosong dianggap tidak ditulis: tombol tanpa teks itu
+            // rusak di mata pemain, bukan pilihan gaya.
+            $title = self::text($value['title'] ?? null);
             $body = isset($value['body']) ? (string) $value['body'] : '';
-            $label = isset($value['label']) ? (string) $value['label'] : null;
+            $label = self::text($value['label'] ?? null);
 
             if (trim($body) !== '') {
                 return ['title' => $title, 'body' => $body, 'label' => $label];
@@ -271,5 +273,11 @@ class QuestTemplate
         }
 
         return ['title' => null, 'body' => null, 'label' => null];
+    }
+
+    /** Teks opsional: string kosong (atau spasi saja) dihitung sebagai tidak ditulis. */
+    private static function text(mixed $value): ?string
+    {
+        return is_scalar($value) && trim((string) $value) !== '' ? (string) $value : null;
     }
 }
