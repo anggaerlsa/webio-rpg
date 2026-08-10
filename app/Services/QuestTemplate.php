@@ -103,7 +103,7 @@ class QuestTemplate
                 'type' => 'narrative',
                 'title' => $intro['title'] ?? $title,
                 'body' => $intro['body'],
-                'choices' => [['label' => 'Hadapi', 'next' => 'fight']],
+                'choices' => [['label' => $intro['label'] ?? 'Hadapi', 'next' => 'fight']],
             ],
             [
                 'key' => 'fight',
@@ -164,7 +164,7 @@ class QuestTemplate
                 'title' => $beat['title'] ?? $title,
                 'body' => $beat['body'],
                 'choices' => [[
-                    'label' => 'Lanjutkan',
+                    'label' => $beat['label'] ?? 'Lanjutkan',
                     'next' => $n < $count ? 'beat_'.($n + 1) : $afterBeats,
                 ]],
             ];
@@ -216,7 +216,7 @@ class QuestTemplate
             'title' => $win['title'] ?? 'Berhasil',
             'body' => $win['body'],
             'payload' => $reward,
-            'choices' => [['label' => 'Lanjutkan', 'next' => 'ending_win', 'is_auto' => true]],
+            'choices' => [['label' => $win['label'] ?? 'Lanjutkan', 'next' => 'ending_win', 'is_auto' => true]],
         ];
     }
 
@@ -242,26 +242,27 @@ class QuestTemplate
 
     /**
      * Normalkan satu field prosa. Menerima string ATAU objek
-     * `{"title": "...", "body": "..."}` — bentuk objek dipakai kalau penulis
-     * mau menimpa judul default.
+     * `{"title": "...", "body": "...", "label": "..."}` — bentuk objek dipakai
+     * kalau penulis mau menimpa judul default atau label tombol pilihannya.
      *
-     * @return array{title: ?string, body: ?string}
+     * @return array{title: ?string, body: ?string, label: ?string}
      */
     private static function prose(string $slug, string $field, mixed $value, bool $required = true): array
     {
         if (is_string($value) && trim($value) !== '') {
-            return ['title' => null, 'body' => $value];
+            return ['title' => null, 'body' => $value, 'label' => null];
         }
 
         if (is_array($value)) {
             $title = isset($value['title']) ? (string) $value['title'] : null;
             $body = isset($value['body']) ? (string) $value['body'] : '';
+            $label = isset($value['label']) ? (string) $value['label'] : null;
 
             if (trim($body) !== '') {
-                return ['title' => $title, 'body' => $body];
+                return ['title' => $title, 'body' => $body, 'label' => $label];
             }
             if (! $required) {
-                return ['title' => $title, 'body' => null];
+                return ['title' => $title, 'body' => null, 'label' => $label];
             }
         }
 
@@ -269,6 +270,6 @@ class QuestTemplate
             throw new RuntimeException("Misi `{$slug}`: `{$field}` wajib diisi.");
         }
 
-        return ['title' => null, 'body' => null];
+        return ['title' => null, 'body' => null, 'label' => null];
     }
 }

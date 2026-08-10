@@ -11,12 +11,14 @@
         "monster": { "slug": "tikus-raksasa", "name": "Tikus Raksasa", "level": 1 },
         "intro": {
             "title": "Gudang Berdebu",
-            "body": "Bau apek dan cericit menyambutmu. Di antara tumpukan peti, sepasang mata merah berkilat. Seekor tikus raksasa menggeram, menjaga wilayahnya."
+            "body": "Bau apek dan cericit menyambutmu. Di antara tumpukan peti, sepasang mata merah berkilat. Seekor tikus raksasa menggeram, menjaga wilayahnya.",
+            "label": "Hadapi tikus itu"
         },
         "fight": "Tikus itu melompat dengan gigi kuning terbuka.",
         "win": {
             "title": "Gudang Aman",
-            "body": "Tikus itu kabur ke lubang dindingnya, tak akan kembali untuk sementara. Juru tulis menyelipkan beberapa koin sebagai tanda terima kasih."
+            "body": "Tikus itu kabur ke lubang dindingnya, tak akan kembali untuk sementara. Juru tulis menyelipkan beberapa koin sebagai tanda terima kasih.",
+            "label": "Laporkan ke guild"
         },
         "outro": {
             "title": "Misi Tuntas",

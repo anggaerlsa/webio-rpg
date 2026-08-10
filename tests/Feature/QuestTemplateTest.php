@@ -143,6 +143,14 @@ class QuestTemplateTest extends TestCase
         $this->assertSame('Kalah', $nodes['lose']['title']);
     }
 
+    public function test_choice_labels_fall_back_to_sane_defaults_when_unwritten(): void
+    {
+        $nodes = $this->nodesByKey(QuestTemplate::expand($this->huntQuest()));
+
+        $this->assertSame('Hadapi', $nodes['intro']['choices'][0]['label']);
+        $this->assertSame('Lanjutkan', $nodes['win']['choices'][0]['label']);
+    }
+
     public function test_object_prose_overrides_the_default_title(): void
     {
         $quest = $this->huntQuest([
@@ -153,6 +161,29 @@ class QuestTemplateTest extends TestCase
 
         $this->assertSame('Gudang Berdebu', $nodes['intro']['title']);
         $this->assertSame('Bau apek menyambutmu.', $nodes['intro']['body']);
+    }
+
+    public function test_hunt_intro_object_prose_can_override_the_choice_label(): void
+    {
+        $quest = $this->huntQuest([
+            'intro' => ['title' => 'Gudang Berdebu', 'body' => 'Bau apek menyambutmu.', 'label' => 'Hadapi tikus itu'],
+        ]);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame('Hadapi tikus itu', $nodes['intro']['choices'][0]['label']);
+    }
+
+    public function test_hunt_win_object_prose_can_override_the_reward_choice_label(): void
+    {
+        $quest = $this->huntQuest([
+            'win' => ['title' => 'Gudang Aman', 'body' => 'Tikus itu kabur.', 'label' => 'Laporkan ke guild'],
+        ]);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame('Laporkan ke guild', $nodes['win']['choices'][0]['label']);
+        $this->assertTrue($nodes['win']['choices'][0]['is_auto']);
     }
 
     public function test_missing_lose_prose_uses_the_default_text(): void
@@ -234,6 +265,16 @@ class QuestTemplateTest extends TestCase
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('rewards');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_label_as_an_archetype_level_key_is_still_rejected(): void
+    {
+        // `label` cuma sah di dalam bentuk objek prosa — bukan field arketipe.
+        $quest = $this->huntQuest(['label' => 'Hadapi tikus itu']);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('tak dikenal');
         QuestTemplate::expand($quest);
     }
 
@@ -383,6 +424,21 @@ class QuestTemplateTest extends TestCase
 
         $this->assertSame('Meja Juru Tulis', $nodes['beat_1']['title']);
         $this->assertSame('Gulungan tipis berpindah tangan.', $nodes['beat_1']['body']);
+    }
+
+    public function test_errand_beats_can_set_their_own_choice_labels(): void
+    {
+        $quest = $this->errandQuest([
+            'beats' => [
+                ['title' => 'Meja Juru Tulis', 'body' => 'Gulungan berpindah tangan.', 'label' => 'Terima surat'],
+                ['title' => 'Jalan Desa', 'body' => 'Jalan berdebu menuju desa sepi.', 'label' => 'Berjalan terus'],
+            ],
+        ]);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame('Terima surat', $nodes['beat_1']['choices'][0]['label']);
+        $this->assertSame('Berjalan terus', $nodes['beat_2']['choices'][0]['label']);
     }
 
     public function test_empty_beats_is_rejected(): void
