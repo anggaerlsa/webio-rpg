@@ -16,11 +16,12 @@
 - **Tanpa dependency baru.** Tidak ada paket Composer/npm yang ditambahkan.
 - Pesan galat & string yang terlihat penulis konten: **Bahasa Indonesia**, sebut **slug misi** atau **slug monster** yang bersalah.
 - Nama field konten yang sudah ada **tidak diubah**: `affiliation`, `required_rank`, `min_level`, `order`, `is_published`, `cover_image`, `start_node`, `nodes`, `monsters`.
-- Bentuk long-form (`nodes`) tetap didukung penuh. `database/content/quests/goblin-cave.json` **tidak boleh disentuh**.
+- Bentuk long-form (`nodes`) tetap didukung penuh. `database/content/quests/goblin-cave.json`, `patroli-tembok.json`, dan `antar-surat.json` **tidak boleh disentuh** (ketiganya bercabang).
 - `game:import` tetap idempoten dan tetap satu transaksi: satu file rusak = seluruh import batal.
 - **165 test yang sudah ada harus tetap lulus** di akhir setiap task.
 - Struktur node yang diterima importer (jangan menyimpang): node = `{key, type, title?, body?, image?, monster?, payload?, choices?}`; choice = `{label, next?, requirements?, effects?, order?, is_auto?}`; tipe node yang dipakai plan ini: `narrative`, `combat`, `reward`, `ending`.
-- Semua kode baru pakai `declare`-less style yang sudah dipakai repo (tanpa `declare(strict_types=1)`), komentar Bahasa Indonesia, `RuntimeException` untuk galat konten.
+- Ikuti gaya repo: tanpa `declare(strict_types=1)`, komentar Bahasa Indonesia, `RuntimeException` untuk galat konten.
+- `StoryEngine::choose()` menerima objek `NodeChoice`, **bukan** id: `choose(Character $character, NodeChoice $choice, int $slot = 1)`.
 
 ---
 
@@ -28,14 +29,14 @@
 
 **Files:**
 - Modify: `app/Models/Monster.php`
-- Modify: `app/Console/Commands/ImportGameContent.php:194-206` (method `upsertMonster`)
+- Modify: `app/Console/Commands/ImportGameContent.php` (method `upsertMonster`, sekitar baris 194-206)
 - Test: `tests/Feature/MonsterScalingTest.php` (create)
 
 **Interfaces:**
 - Consumes: nothing (task pertama)
 - Produces:
   - `Monster::statsForLevel(int $level): array` → kunci `max_hp`, `attack`, `defense`, `magic_attack`, `magic_defense`, `xp_reward`, `gold_reward` (semua `int`)
-  - `ImportGameContent::upsertMonster(array $data): void` sekarang menerima kunci `level` dan memvalidasi field tak dikenal
+  - `ImportGameContent::upsertMonster(array $data): void` menerima kunci `level` dan menolak field tak dikenal
 
 - [ ] **Step 1: Write the failing test**
 
@@ -132,14 +133,12 @@ Expected: PASS (3 tests)
 
 - [ ] **Step 5: Write the failing test for importer level support**
 
-Append to `tests/Feature/MonsterScalingTest.php` (inside the class):
+Append inside the class in `tests/Feature/MonsterScalingTest.php`:
 
 ```php
     public function test_importer_fills_stats_from_level(): void
     {
-        $this->importer()->upsertMonster([
-            'slug' => 'tikus-uji', 'name' => 'Tikus Uji', 'level' => 1,
-        ]);
+        $this->upsertMonster(['slug' => 'tikus-uji', 'name' => 'Tikus Uji', 'level' => 1]);
 
         $monster = Monster::where('slug', 'tikus-uji')->firstOrFail();
         $this->assertSame(3, $monster->max_hp);
@@ -151,7 +150,7 @@ Append to `tests/Feature/MonsterScalingTest.php` (inside the class):
 
     public function test_explicit_fields_beat_the_formula(): void
     {
-        $this->importer()->upsertMonster([
+        $this->upsertMonster([
             'slug' => 'goblin-uji', 'name' => 'Goblin Uji', 'level' => 1,
             'max_hp' => 5, 'attack' => 3, 'xp_reward' => 60, 'gold_reward' => 20,
         ]);
@@ -167,14 +166,14 @@ Append to `tests/Feature/MonsterScalingTest.php` (inside the class):
     {
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('`max_hp` wajib');
-        $this->importer()->upsertMonster(['slug' => 'rusak', 'name' => 'Rusak']);
+        $this->upsertMonster(['slug' => 'rusak', 'name' => 'Rusak']);
     }
 
     public function test_unknown_monster_field_is_rejected(): void
     {
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('magik_attack');
-        $this->importer()->upsertMonster([
+        $this->upsertMonster([
             'slug' => 'salah-tulis', 'name' => 'Salah Tulis', 'level' => 2, 'magik_attack' => 5,
         ]);
     }
@@ -183,35 +182,28 @@ Append to `tests/Feature/MonsterScalingTest.php` (inside the class):
     {
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('`level` harus integer');
-        $this->importer()->upsertMonster(['slug' => 'aneh', 'name' => 'Aneh', 'level' => 'tiga']);
+        $this->upsertMonster(['slug' => 'aneh', 'name' => 'Aneh', 'level' => 'tiga']);
     }
 
     /**
-     * `upsertMonster` privat — dipanggil lewat reflection supaya test tidak
-     * perlu menulis file JSON sementara untuk memeriksa satu blok monster.
+     * `upsertMonster` privat — dipanggil lewat reflection supaya test satu blok
+     * monster tidak perlu menulis file JSON sementara.
+     *
+     * @param  array<string, mixed>  $data
      */
-    private function importer(): object
+    private function upsertMonster(array $data): void
     {
         $command = app(\App\Console\Commands\ImportGameContent::class);
-
-        return new class($command)
-        {
-            public function __construct(private object $command) {}
-
-            public function upsertMonster(array $data): void
-            {
-                $method = new \ReflectionMethod($this->command, 'upsertMonster');
-                $method->setAccessible(true);
-                $method->invoke($this->command, $data);
-            }
-        };
+        $method = new \ReflectionMethod($command, 'upsertMonster');
+        $method->setAccessible(true);
+        $method->invoke($command, $data);
     }
 ```
 
 - [ ] **Step 6: Run test to verify it fails**
 
 Run: `php artisan test --filter=MonsterScalingTest`
-Expected: FAIL — 5 test baru gagal (`level` diabaikan, `Undefined array key "max_hp"` bukan `RuntimeException`)
+Expected: FAIL — 5 test baru gagal (`level` diabaikan; `Undefined array key "max_hp"` bukan `RuntimeException`)
 
 - [ ] **Step 7: Rewrite upsertMonster**
 
@@ -277,7 +269,7 @@ Replace `upsertMonster` in `app/Console/Commands/ImportGameContent.php` with:
     }
 ```
 
-Add the import at the top of the file, after the existing `use` statements:
+Add at the top of the file, with the other imports:
 
 ```php
 use RuntimeException;
@@ -289,7 +281,7 @@ Run: `php artisan test --filter=MonsterScalingTest`
 Expected: PASS (8 tests)
 
 Run: `php artisan test`
-Expected: PASS — 165 test lama + 8 baru = 173
+Expected: PASS — 165 lama + 8 baru = 173
 
 - [ ] **Step 9: Commit**
 
@@ -307,10 +299,13 @@ git commit -m "Stat monster bisa diturunkan dari level, field eksplisit menimpan
 - Test: `tests/Feature/QuestTemplateTest.php` (create)
 
 **Interfaces:**
-- Consumes: `Monster::statsForLevel()` tidak dipanggil di sini — blok monster diteruskan apa adanya ke `monsters` dan diselesaikan `upsertMonster` (Task 1).
+- Consumes: nothing dari Task 1 (blok monster diteruskan apa adanya ke `monsters`; `upsertMonster` yang menyelesaikannya nanti)
 - Produces:
-  - `QuestTemplate::expand(array $quest): array` — bila ada `hunt`/`errand`, kembalikan array yang sama dengan `nodes` + `monsters` + `start_node` terisi dan key arketipe dibuang; bila ada `nodes`, kembalikan apa adanya.
-  - Kunci node yang dihasilkan `hunt`: `intro`, `fight`, `win` (hanya bila ada `reward`), `ending_win`, `lose`.
+  - `QuestTemplate::expand(array $quest): array` — bila ada `hunt`, kembalikan array yang sama dengan `nodes` + `monsters` + `start_node` terisi dan key `hunt` dibuang; bila ada `nodes`, kembalikan apa adanya
+  - Kunci node `hunt`: `intro`, `fight`, `win` (hanya bila ada `reward`), `ending_win`, `lose`
+  - Helper privat yang dipakai Task 3: `prose()`, `endingWin()`, dan konstanta `SHAPES`
+
+**Catatan untuk implementer:** task ini HANYA arketipe `hunt`. Jangan menulis kode `errand` — itu Task 3, dan test-nya harus mulai dari merah di sana.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -329,7 +324,7 @@ class QuestTemplateTest extends TestCase
     /** Misi `hunt` minimal yang dipakai berulang di test ini. */
     private function huntQuest(array $overrides = []): array
     {
-        return array_merge([
+        return [
             'slug' => 'tikus-gudang',
             'title' => 'Tikus Gudang',
             'affiliation' => 'adventurer',
@@ -341,7 +336,7 @@ class QuestTemplateTest extends TestCase
                 'lose' => 'Memalukan — kau mundur dari seekor tikus.',
                 'reward' => ['xp' => 15, 'gold' => 15],
             ], $overrides),
-        ]);
+        ];
     }
 
     /** @return array<string, array<string, mixed>> node dikunci `key` */
@@ -421,6 +416,104 @@ class QuestTemplateTest extends TestCase
 
         $this->assertSame($longForm, QuestTemplate::expand($longForm));
     }
+
+    public function test_titles_fall_back_to_sane_defaults(): void
+    {
+        $nodes = $this->nodesByKey(QuestTemplate::expand($this->huntQuest()));
+
+        $this->assertSame('Tikus Gudang', $nodes['intro']['title']);      // judul misi
+        $this->assertSame('Tikus Raksasa!', $nodes['fight']['title']);    // nama monster + !
+        $this->assertSame('Berhasil', $nodes['win']['title']);
+        $this->assertSame('Misi Tuntas', $nodes['ending_win']['title']);
+        $this->assertSame('Kalah', $nodes['lose']['title']);
+    }
+
+    public function test_object_prose_overrides_the_default_title(): void
+    {
+        $quest = $this->huntQuest([
+            'intro' => ['title' => 'Gudang Berdebu', 'body' => 'Bau apek menyambutmu.'],
+        ]);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame('Gudang Berdebu', $nodes['intro']['title']);
+        $this->assertSame('Bau apek menyambutmu.', $nodes['intro']['body']);
+    }
+
+    public function test_missing_lose_prose_uses_the_default_text(): void
+    {
+        $quest = $this->huntQuest();
+        unset($quest['hunt']['lose']);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame('Kalah', $nodes['lose']['title']);
+        $this->assertNotEmpty($nodes['lose']['body']);
+    }
+
+    public function test_outro_overrides_the_default_ending_text(): void
+    {
+        $quest = $this->huntQuest(['outro' => 'Guild mencatat namamu di papan jasa.']);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame('Guild mencatat namamu di papan jasa.', $nodes['ending_win']['body']);
+    }
+
+    public function test_mixing_shorthand_with_long_form_nodes_is_rejected(): void
+    {
+        $quest = $this->huntQuest();
+        $quest['nodes'] = [['key' => 'intro', 'type' => 'narrative', 'body' => 'Halo.']];
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('tidak bisa dicampur');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_hunt_without_a_monster_is_rejected(): void
+    {
+        $quest = $this->huntQuest();
+        unset($quest['hunt']['monster']);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('`hunt.monster` wajib punya `slug`');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_monster_without_slug_is_rejected(): void
+    {
+        $quest = $this->huntQuest(['monster' => ['name' => 'Tanpa Slug', 'level' => 1]]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('tikus-gudang');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_required_prose_cannot_be_blank(): void
+    {
+        $quest = $this->huntQuest(['intro' => '   ']);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('`hunt.intro` wajib diisi');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_missing_win_prose_is_rejected(): void
+    {
+        $quest = $this->huntQuest();
+        unset($quest['hunt']['win']);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('`hunt.win` wajib diisi');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_archetype_must_be_an_object(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('harus berupa objek');
+        QuestTemplate::expand(['slug' => 'rusak', 'title' => 'Rusak', 'hunt' => 'bukan objek']);
+    }
 }
 ```
 
@@ -429,7 +522,7 @@ class QuestTemplateTest extends TestCase
 Run: `php artisan test --filter=QuestTemplateTest`
 Expected: FAIL — `Class "App\Services\QuestTemplate" not found`
 
-- [ ] **Step 3: Implement QuestTemplate with the hunt archetype**
+- [ ] **Step 3: Implement QuestTemplate with the hunt archetype only**
 
 Create `app/Services/QuestTemplate.php`:
 
@@ -441,15 +534,18 @@ namespace App\Services;
 use RuntimeException;
 
 /**
- * Mengembangkan bentuk misi RINGKAS (`hunt` / `errand`) jadi struktur node
- * long-form yang dimengerti importer. Dipanggil sebelum jalur upsert biasa,
- * jadi runtime (StoryEngine/CombatService/Panel Dewa) tidak pernah tahu
- * template ini ada — yang masuk DB tetap node normal.
+ * Mengembangkan bentuk misi RINGKAS jadi struktur node long-form yang
+ * dimengerti importer. Dipanggil sebelum jalur upsert biasa, jadi runtime
+ * (StoryEngine/CombatService/Panel Dewa) tidak pernah tahu template ini ada —
+ * yang masuk DB tetap node normal.
  *
  * Murni fungsi: tidak menyentuh DB, jadi bisa diuji tanpa migrasi.
  */
 class QuestTemplate
 {
+    /** Arketipe yang dikenali. */
+    private const SHAPES = ['hunt'];
+
     private const DEFAULT_LOSE = 'Kau tumbang. Pulihkan diri lalu coba lagi.';
 
     private const DEFAULT_OUTRO = 'Tugas selesai. Laporkan hasilnya ke guild.';
@@ -461,10 +557,10 @@ class QuestTemplate
     public static function expand(array $quest): array
     {
         $slug = $quest['slug'] ?? '(tanpa slug)';
-        $shapes = array_values(array_filter(['hunt', 'errand'], fn (string $k) => isset($quest[$k])));
+        $shapes = array_values(array_filter(self::SHAPES, fn (string $k) => isset($quest[$k])));
 
         if (count($shapes) > 1) {
-            throw new RuntimeException("Misi `{$slug}`: pilih salah satu, `hunt` atau `errand`.");
+            throw new RuntimeException("Misi `{$slug}`: pilih salah satu arketipe saja.");
         }
         if ($shapes === []) {
             return $quest; // long-form, biarkan apa adanya
@@ -481,11 +577,8 @@ class QuestTemplate
         unset($quest[$shape]);
 
         $title = (string) ($quest['title'] ?? $slug);
-        $expanded = $shape === 'hunt'
-            ? self::hunt($slug, $title, $body)
-            : self::errand($slug, $title, $body);
 
-        return array_merge($quest, $expanded);
+        return array_merge($quest, self::hunt($slug, $title, $body));
     }
 
     /**
@@ -529,14 +622,7 @@ class QuestTemplate
         ];
 
         if ($reward) {
-            $nodes[] = [
-                'key' => 'win',
-                'type' => 'reward',
-                'title' => $win['title'] ?? 'Berhasil',
-                'body' => $win['body'],
-                'payload' => $reward,
-                'choices' => [['label' => 'Lanjutkan', 'next' => 'ending_win', 'is_auto' => true]],
-            ];
+            $nodes[] = self::rewardNode($win, $reward);
         }
 
         $nodes[] = self::endingWin($win, $outro, hasReward: (bool) $reward);
@@ -552,62 +638,28 @@ class QuestTemplate
     }
 
     /**
-     * Rangkaian narasi tanpa tarung: beat_1..beat_n → (win) → ending_win.
+     * Node reward yang mengalir otomatis ke ending sukses.
      *
-     * @param  array<string, mixed>  $errand
+     * @param  array{title: ?string, body: ?string}  $win
+     * @param  array<string, mixed>  $reward
      * @return array<string, mixed>
      */
-    private static function errand(string $slug, string $title, array $errand): array
+    private static function rewardNode(array $win, array $reward): array
     {
-        $beats = $errand['beats'] ?? null;
-        if (! is_array($beats) || $beats === []) {
-            throw new RuntimeException("Misi `{$slug}`: `errand.beats` wajib berisi minimal satu adegan.");
-        }
-
-        $win = self::prose($slug, 'errand.win', $errand['win'] ?? null);
-        $outro = self::prose($slug, 'errand.outro', $errand['outro'] ?? null, required: false);
-
-        $reward = $errand['reward'] ?? null;
-        $afterBeats = $reward ? 'win' : 'ending_win';
-
-        $nodes = [];
-        $beats = array_values($beats);
-        $count = count($beats);
-        foreach ($beats as $i => $raw) {
-            $n = $i + 1;
-            $beat = self::prose($slug, "errand.beats[{$i}]", $raw);
-            $nodes[] = [
-                'key' => "beat_{$n}",
-                'type' => 'narrative',
-                'title' => $beat['title'] ?? $title,
-                'body' => $beat['body'],
-                'choices' => [[
-                    'label' => 'Lanjutkan',
-                    'next' => $n < $count ? 'beat_'.($n + 1) : $afterBeats,
-                ]],
-            ];
-        }
-
-        if ($reward) {
-            $nodes[] = [
-                'key' => 'win',
-                'type' => 'reward',
-                'title' => $win['title'] ?? 'Berhasil',
-                'body' => $win['body'],
-                'payload' => $reward,
-                'choices' => [['label' => 'Lanjutkan', 'next' => 'ending_win', 'is_auto' => true]],
-            ];
-        }
-
-        $nodes[] = self::endingWin($win, $outro, hasReward: (bool) $reward);
-
-        return ['start_node' => 'beat_1', 'nodes' => $nodes, 'monsters' => []];
+        return [
+            'key' => 'win',
+            'type' => 'reward',
+            'title' => $win['title'] ?? 'Berhasil',
+            'body' => $win['body'],
+            'payload' => $reward,
+            'choices' => [['label' => 'Lanjutkan', 'next' => 'ending_win', 'is_auto' => true]],
+        ];
     }
 
     /**
      * Node ending sukses. Bila ada node reward, prosa `win` sudah terpakai di
-     * sana, jadi ending memakai `outro` (atau default). Bila tidak, prosa `win`
-     * pindah ke ending supaya tidak hilang.
+     * sana, jadi ending memakai `outro` (atau teks default). Bila tidak, prosa
+     * `win` pindah ke ending supaya tidak hilang.
      *
      * @param  array{title: ?string, body: ?string}  $win
      * @param  array{title: ?string, body: ?string}  $outro
@@ -619,9 +671,7 @@ class QuestTemplate
             'key' => 'ending_win',
             'type' => 'ending',
             'title' => ($hasReward ? $outro['title'] : $win['title']) ?? 'Misi Tuntas',
-            'body' => $hasReward
-                ? ($outro['body'] ?? self::DEFAULT_OUTRO)
-                : $win['body'],
+            'body' => $hasReward ? ($outro['body'] ?? self::DEFAULT_OUTRO) : $win['body'],
             'payload' => ['result' => 'victory'],
         ];
     }
@@ -663,7 +713,10 @@ class QuestTemplate
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `php artisan test --filter=QuestTemplateTest`
-Expected: PASS (5 tests)
+Expected: PASS (15 tests)
+
+Run: `php artisan test`
+Expected: PASS — 173 + 15 = 188
 
 - [ ] **Step 5: Commit**
 
@@ -677,23 +730,23 @@ git commit -m "QuestTemplate: arketipe hunt jadi node long-form"
 ### Task 3: Arketipe `errand`
 
 **Files:**
-- Modify: `app/Services/QuestTemplate.php` (kode `errand` sudah ditulis di Task 2 — task ini menguncinya dengan test)
+- Modify: `app/Services/QuestTemplate.php`
 - Test: `tests/Feature/QuestTemplateTest.php` (append)
 
 **Interfaces:**
-- Consumes: `QuestTemplate::expand()` dari Task 2
-- Produces: kunci node `errand`: `beat_1..beat_n`, `win` (hanya bila ada `reward`), `ending_win`. Tidak ada node `lose`.
+- Consumes dari Task 2: `QuestTemplate::expand()`, konstanta privat `SHAPES`, helper privat `prose(string $slug, string $field, mixed $value, bool $required = true): array` (mengembalikan `['title' => ?string, 'body' => ?string]`), `rewardNode(array $win, array $reward): array`, `endingWin(array $win, array $outro, bool $hasReward): array`
+- Produces: kunci node `errand`: `beat_1..beat_n`, `win` (hanya bila ada `reward`), `ending_win`. **Tidak ada** node `lose`.
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `tests/Feature/QuestTemplateTest.php` (inside the class):
+Append inside the class in `tests/Feature/QuestTemplateTest.php`:
 
 ```php
     private function errandQuest(array $overrides = []): array
     {
         return [
-            'slug' => 'antar-surat',
-            'title' => 'Antar Surat',
+            'slug' => 'antar-kabar',
+            'title' => 'Antar Kabar',
             'affiliation' => 'merchant',
             'errand' => array_merge([
                 'beats' => [
@@ -720,6 +773,7 @@ Append to `tests/Feature/QuestTemplateTest.php` (inside the class):
         $this->assertSame('win', $nodes['beat_2']['choices'][0]['next']);
         $this->assertSame('victory', $nodes['ending_win']['payload']['result']);
         $this->assertSame([], $expanded['monsters']);
+        $this->assertArrayNotHasKey('errand', $expanded);
     }
 
     public function test_errand_has_no_defeat_ending(): void
@@ -750,147 +804,25 @@ Append to `tests/Feature/QuestTemplateTest.php` (inside the class):
         $this->assertSame(['beat_1', 'win', 'ending_win'], array_keys($nodes));
         $this->assertSame('win', $nodes['beat_1']['choices'][0]['next']);
     }
-```
 
-- [ ] **Step 2: Run test to verify it passes**
-
-Run: `php artisan test --filter=QuestTemplateTest`
-Expected: PASS (9 tests) — implementasi `errand` sudah ada dari Task 2; test ini yang menguncinya. Jika ada yang gagal, perbaiki `QuestTemplate::errand()` sampai lulus sebelum lanjut.
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add tests/Feature/QuestTemplateTest.php
-git commit -m "Kunci perilaku arketipe errand dengan test"
-```
-
----
-
-### Task 4: Default judul, label, dan bentuk prosa objek
-
-**Files:**
-- Modify: `app/Services/QuestTemplate.php` (bila ada default yang belum sesuai)
-- Test: `tests/Feature/QuestTemplateTest.php` (append)
-
-**Interfaces:**
-- Consumes: `QuestTemplate::expand()` dari Task 2 & 3
-- Produces: kontrak default yang dipegang task migrasi konten (Task 7)
-
-- [ ] **Step 1: Write the failing test**
-
-Append to `tests/Feature/QuestTemplateTest.php` (inside the class):
-
-```php
-    public function test_titles_fall_back_to_sane_defaults(): void
+    public function test_errand_beat_titles_default_to_the_quest_title(): void
     {
-        $nodes = $this->nodesByKey(QuestTemplate::expand($this->huntQuest()));
+        $nodes = $this->nodesByKey(QuestTemplate::expand($this->errandQuest()));
 
-        $this->assertSame('Tikus Gudang', $nodes['intro']['title']);      // judul misi
-        $this->assertSame('Tikus Raksasa!', $nodes['fight']['title']);    // nama monster + !
-        $this->assertSame('Berhasil', $nodes['win']['title']);
-        $this->assertSame('Misi Tuntas', $nodes['ending_win']['title']);
-        $this->assertSame('Kalah', $nodes['lose']['title']);
+        $this->assertSame('Antar Kabar', $nodes['beat_1']['title']);
+        $this->assertSame('Antar Kabar', $nodes['beat_2']['title']);
     }
 
-    public function test_object_prose_overrides_the_default_title(): void
+    public function test_errand_beat_accepts_object_prose(): void
     {
-        $quest = $this->huntQuest([
-            'intro' => ['title' => 'Gudang Berdebu', 'body' => 'Bau apek menyambutmu.'],
+        $quest = $this->errandQuest([
+            'beats' => [['title' => 'Meja Juru Tulis', 'body' => 'Gulungan tipis berpindah tangan.']],
         ]);
 
         $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
 
-        $this->assertSame('Gudang Berdebu', $nodes['intro']['title']);
-        $this->assertSame('Bau apek menyambutmu.', $nodes['intro']['body']);
-    }
-
-    public function test_missing_lose_prose_uses_the_default_text(): void
-    {
-        $quest = $this->huntQuest();
-        unset($quest['hunt']['lose']);
-
-        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
-
-        $this->assertSame('Kalah', $nodes['lose']['title']);
-        $this->assertNotEmpty($nodes['lose']['body']);
-    }
-
-    public function test_outro_overrides_the_default_ending_text(): void
-    {
-        $quest = $this->huntQuest(['outro' => 'Guild mencatat namamu di papan jasa.']);
-
-        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
-
-        $this->assertSame('Guild mencatat namamu di papan jasa.', $nodes['ending_win']['body']);
-    }
-```
-
-- [ ] **Step 2: Run test to verify it passes**
-
-Run: `php artisan test --filter=QuestTemplateTest`
-Expected: PASS (13 tests). Jika `test_outro_overrides_the_default_ending_text` gagal, periksa `endingWin()` — `outro` harus dipakai saat node reward ada.
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add tests/Feature/QuestTemplateTest.php
-git commit -m "Kunci default judul/label dan bentuk prosa objek"
-```
-
----
-
-### Task 5: Pesan galat validasi
-
-**Files:**
-- Modify: `app/Services/QuestTemplate.php` (bila ada pesan yang belum sesuai)
-- Test: `tests/Feature/QuestTemplateTest.php` (append)
-
-**Interfaces:**
-- Consumes: `QuestTemplate::expand()`
-- Produces: jaminan setiap konten rusak gagal keras dengan pesan yang menyebut slug misi
-
-- [ ] **Step 1: Write the failing test**
-
-Append to `tests/Feature/QuestTemplateTest.php` (inside the class):
-
-```php
-    public function test_mixing_two_archetypes_is_rejected(): void
-    {
-        $quest = $this->huntQuest();
-        $quest['errand'] = ['beats' => ['Apa pun.'], 'win' => 'Selesai.'];
-
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('pilih salah satu');
-        QuestTemplate::expand($quest);
-    }
-
-    public function test_mixing_shorthand_with_long_form_nodes_is_rejected(): void
-    {
-        $quest = $this->huntQuest();
-        $quest['nodes'] = [['key' => 'intro', 'type' => 'narrative', 'body' => 'Halo.']];
-
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('tidak bisa dicampur');
-        QuestTemplate::expand($quest);
-    }
-
-    public function test_hunt_without_a_monster_is_rejected(): void
-    {
-        $quest = $this->huntQuest();
-        unset($quest['hunt']['monster']);
-
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('`hunt.monster` wajib punya `slug`');
-        QuestTemplate::expand($quest);
-    }
-
-    public function test_monster_without_slug_is_rejected(): void
-    {
-        $quest = $this->huntQuest(['monster' => ['name' => 'Tanpa Slug', 'level' => 1]]);
-
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('tikus-gudang');
-        QuestTemplate::expand($quest);
+        $this->assertSame('Meja Juru Tulis', $nodes['beat_1']['title']);
+        $this->assertSame('Gulungan tipis berpindah tangan.', $nodes['beat_1']['body']);
     }
 
     public function test_empty_beats_is_rejected(): void
@@ -902,55 +834,128 @@ Append to `tests/Feature/QuestTemplateTest.php` (inside the class):
         QuestTemplate::expand($quest);
     }
 
-    public function test_required_prose_cannot_be_blank(): void
+    public function test_blank_beat_prose_is_rejected(): void
     {
-        $quest = $this->huntQuest(['intro' => '   ']);
+        $quest = $this->errandQuest(['beats' => ['  ']]);
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('`hunt.intro` wajib diisi');
+        $this->expectExceptionMessage('errand.beats');
         QuestTemplate::expand($quest);
     }
 
-    public function test_missing_win_prose_is_rejected(): void
+    public function test_mixing_two_archetypes_is_rejected(): void
     {
         $quest = $this->huntQuest();
-        unset($quest['hunt']['win']);
+        $quest['errand'] = ['beats' => ['Apa pun.'], 'win' => 'Selesai.'];
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('`hunt.win` wajib diisi');
+        $this->expectExceptionMessage('salah satu');
         QuestTemplate::expand($quest);
-    }
-
-    public function test_archetype_must_be_an_object(): void
-    {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('harus berupa objek');
-        QuestTemplate::expand(['slug' => 'rusak', 'title' => 'Rusak', 'hunt' => 'bukan objek']);
     }
 ```
 
-- [ ] **Step 2: Run test to verify it passes**
+- [ ] **Step 2: Run test to verify it fails**
 
 Run: `php artisan test --filter=QuestTemplateTest`
-Expected: PASS (21 tests). Jika ada yang gagal, sesuaikan pesan galat di `QuestTemplate` — bukan test-nya.
+Expected: FAIL — 9 test baru gagal. `errand` belum ada di `SHAPES`, jadi `expand()` mengembalikan quest apa adanya dan `$expanded['nodes']` tidak ada (`Undefined array key "nodes"`).
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3: Add the errand archetype**
+
+In `app/Services/QuestTemplate.php`:
+
+1. Register the archetype:
+
+```php
+    /** Arketipe yang dikenali. */
+    private const SHAPES = ['hunt', 'errand'];
+```
+
+2. Dispatch to it in `expand()` — replace the final `return` with:
+
+```php
+        $expanded = $shape === 'hunt'
+            ? self::hunt($slug, $title, $body)
+            : self::errand($slug, $title, $body);
+
+        return array_merge($quest, $expanded);
+```
+
+3. Add the method after `hunt()`:
+
+```php
+    /**
+     * Rangkaian narasi tanpa tarung: beat_1..beat_n → (win) → ending_win.
+     * Tidak punya ending kalah karena tidak ada yang bisa mengalahkan pemain.
+     *
+     * @param  array<string, mixed>  $errand
+     * @return array<string, mixed>
+     */
+    private static function errand(string $slug, string $title, array $errand): array
+    {
+        $beats = $errand['beats'] ?? null;
+        if (! is_array($beats) || $beats === []) {
+            throw new RuntimeException("Misi `{$slug}`: `errand.beats` wajib berisi minimal satu adegan.");
+        }
+
+        $win = self::prose($slug, 'errand.win', $errand['win'] ?? null);
+        $outro = self::prose($slug, 'errand.outro', $errand['outro'] ?? null, required: false);
+
+        $reward = $errand['reward'] ?? null;
+        $afterBeats = $reward ? 'win' : 'ending_win';
+
+        $nodes = [];
+        $beats = array_values($beats);
+        $count = count($beats);
+        foreach ($beats as $i => $raw) {
+            $n = $i + 1;
+            $beat = self::prose($slug, "errand.beats[{$i}]", $raw);
+            $nodes[] = [
+                'key' => "beat_{$n}",
+                'type' => 'narrative',
+                'title' => $beat['title'] ?? $title,
+                'body' => $beat['body'],
+                'choices' => [[
+                    'label' => 'Lanjutkan',
+                    'next' => $n < $count ? 'beat_'.($n + 1) : $afterBeats,
+                ]],
+            ];
+        }
+
+        if ($reward) {
+            $nodes[] = self::rewardNode($win, $reward);
+        }
+
+        $nodes[] = self::endingWin($win, $outro, hasReward: (bool) $reward);
+
+        return ['start_node' => 'beat_1', 'nodes' => $nodes, 'monsters' => []];
+    }
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `php artisan test --filter=QuestTemplateTest`
+Expected: PASS (24 tests)
+
+Run: `php artisan test`
+Expected: PASS — 188 + 9 = 197
+
+- [ ] **Step 5: Commit**
 
 ```bash
-git add tests/Feature/QuestTemplateTest.php app/Services/QuestTemplate.php
-git commit -m "Kunci pesan galat validasi konten misi ringkas"
+git add app/Services/QuestTemplate.php tests/Feature/QuestTemplateTest.php
+git commit -m "QuestTemplate: arketipe errand untuk misi tanpa tarung"
 ```
 
 ---
 
-### Task 6: Sambungkan ke `game:import` + test integrasi
+### Task 4: Sambungkan ke `game:import` + test integrasi
 
 **Files:**
-- Modify: `app/Console/Commands/ImportGameContent.php:130-135` (awal `importQuests`)
+- Modify: `app/Console/Commands/ImportGameContent.php` (awal `importQuests`, sekitar baris 130-135)
 - Test: `tests/Feature/QuestTemplateImportTest.php` (create)
 
 **Interfaces:**
-- Consumes: `QuestTemplate::expand()` (Task 2–5), `Monster::statsForLevel()` via `upsertMonster` (Task 1)
+- Consumes: `QuestTemplate::expand()` (Task 2–3), `Monster::statsForLevel()` via `upsertMonster` (Task 1)
 - Produces: `game:import` menerima file misi ringkas; hasilnya quest yang bisa dimainkan
 
 - [ ] **Step 1: Write the failing test**
@@ -1044,7 +1049,7 @@ class QuestTemplateImportTest extends TestCase
         $save = $story->save($char);
         $this->assertSame('intro', $save->current_node_key);
 
-        // intro -> fight. Catatan: choose() menerima objek NodeChoice, bukan id.
+        // intro -> fight. choose() menerima objek NodeChoice, bukan id.
         $choice = $story->currentNode($save)->choices->firstOrFail();
         $story->choose($char, $choice);
         $save = $story->save($char->fresh());
@@ -1053,12 +1058,13 @@ class QuestTemplateImportTest extends TestCase
         // Habisi monster (HP 3, Pukul power 1) lalu pastikan cerita maju.
         $node = $story->currentNode($save);
         $combat->start($char->fresh(), $node);
-        $session = $char->fresh()->activeCombat()->first();
+        $session = $char->fresh()->activeCombat()->firstOrFail();
         $skill = $char->fresh()->skills()->firstOrFail();
 
+        $result = [];
         for ($turn = 0; $turn < 5; $turn++) {
             $result = $combat->act($session->fresh(), 'skill', $skill->id);
-            if ($result['status'] === 'won') {
+            if ($result['status'] !== 'active') {
                 break;
             }
         }
@@ -1092,7 +1098,7 @@ In `app/Console/Commands/ImportGameContent.php`, change the top of `importQuests
             }
 ```
 
-Add the import at the top of the file:
+Add at the top of the file, with the other imports:
 
 ```php
 use App\Services\QuestTemplate;
@@ -1106,7 +1112,7 @@ Expected: PASS (2 tests)
 - [ ] **Step 5: Verify nothing else broke**
 
 Run: `php artisan test`
-Expected: PASS — 173 + 21 + 2 = 196 test, nol gagal
+Expected: PASS — 197 + 2 = 199 test, nol gagal
 
 - [ ] **Step 6: Commit**
 
@@ -1117,7 +1123,7 @@ git commit -m "game:import menerima bentuk misi ringkas"
 
 ---
 
-### Task 7: Migrasi `tikus-gudang` + satu misi `errand` baru
+### Task 5: Migrasi `tikus-gudang` + satu misi `errand` baru
 
 **Files:**
 - Modify: `database/content/quests/tikus-gudang.json`
@@ -1125,16 +1131,18 @@ git commit -m "game:import menerima bentuk misi ringkas"
 - Jangan sentuh: `database/content/quests/goblin-cave.json`, `patroli-tembok.json`, `antar-surat.json`
 
 **Interfaces:**
-- Consumes: seluruh kontrak dari Task 1–6
+- Consumes: seluruh kontrak dari Task 1–4
 - Produces: bukti bahwa kedua arketipe menghasilkan misi yang bisa dimainkan
 
-**Kenapa hanya satu misi yang dimigrasi:** pemeriksaan ulang konten menunjukkan `patroli-tembok` dan `antar-surat` **bercabang** (masing-masing punya dua pilihan di node pertama), jadi keduanya bukan rantai lurus dan **tidak boleh** dipaksa jadi `errand` — memaksanya akan menghapus percabangan yang justru jadi isi misinya. Keduanya tetap long-form. Karena itu `errand` divalidasi lewat satu misi baru yang memang lurus — sekaligus mendemonstrasikan klaim M1 bahwa menambah misi itu murah.
+**Kenapa hanya satu misi yang dimigrasi:** `patroli-tembok` dan `antar-surat` **bercabang** (masing-masing punya dua pilihan di node pertama), jadi bukan rantai lurus dan **tidak boleh** dipaksa jadi `errand` — memaksanya akan menghapus percabangan yang justru jadi isi misinya. Karena itu `errand` divalidasi lewat satu misi baru yang memang lurus.
 
 - [ ] **Step 1: Record the current shape of the quests**
 
+Run: `php artisan game:import`
+
 Run: `php artisan tinker --execute="foreach (App\Models\Quest::orderBy('slug')->get() as \$q) { echo \$q->slug.': '.\$q->nodes()->count().\" node\n\"; }"`
 
-Catat keluarannya. Setelah semua perubahan, hanya `tikus-gudang` yang boleh berubah bentuk (tetap 5 node) dan `kabar-desa` yang baru muncul.
+Catat keluarannya. Di akhir task, hanya `tikus-gudang` yang boleh berubah bentuk (tetap 5 node) dan `kabar-desa` yang baru muncul.
 
 - [ ] **Step 2: Rewrite `tikus-gudang.json` in shorthand**
 
@@ -1174,15 +1182,15 @@ Replace the whole file with:
 }
 ```
 
-Catatan: `tikus-raksasa` cukup `"level": 1` karena rumus lv1 menghasilkan stat yang identik dengan nilai lamanya (hp 3, atk 1, def 0, xp 30, emas 10).
+`tikus-raksasa` cukup `"level": 1` karena rumus lv1 menghasilkan stat identik dengan nilai lamanya (hp 3, atk 1, def 0, xp 30, emas 10).
 
-- [ ] **Step 3: Re-import and verify the quest is unchanged in shape**
+- [ ] **Step 3: Re-import and verify the monster stats did not drift**
 
 Run: `php artisan game:import`
-Expected: berhasil, baris `- quest 'tikus-gudang' (5 nodes)`
+Expected: berhasil, ada baris `- quest 'tikus-gudang' (5 nodes)`
 
-Run: `php artisan tinker --execute="\$m = App\Models\Monster::where('slug','tikus-raksasa')->firstOrFail(); echo \$m->max_hp.'/'.\$m->attack.'/'.\$m->xp_reward.'/'.\$m->gold_reward;"`
-Expected: `3/1/30/10` — sama dengan sebelum migrasi
+Run: `php artisan tinker --execute="\$m = App\Models\Monster::where('slug','tikus-raksasa')->firstOrFail(); echo \$m->max_hp.'/'.\$m->attack.'/'.\$m->defense.'/'.\$m->xp_reward.'/'.\$m->gold_reward;"`
+Expected: `3/1/0/30/10` — sama dengan sebelum migrasi
 
 - [ ] **Step 4: Write a new `errand` mission**
 
@@ -1226,7 +1234,7 @@ Create `database/content/quests/kabar-desa.json`:
 }
 ```
 
-- [ ] **Step 5: Re-import and verify the new mission expands correctly**
+- [ ] **Step 5: Re-import and verify the new mission wiring**
 
 Run: `php artisan game:import`
 Expected: berhasil, ada baris `- quest 'kabar-desa' (5 nodes)` — 3 beat + `win` + `ending_win`
@@ -1241,18 +1249,15 @@ win (reward) -> ending_win
 ending_win (ending) -> -
 ```
 
-- [ ] **Step 6: Verify all quests still load**
-
-Run: `php artisan game:import`
-Expected: berhasil; jumlah node tiap misi sama dengan catatan Step 1 (kecuali misi yang sengaja dibiarkan long-form)
+- [ ] **Step 6: Verify the untouched quests are unchanged**
 
 Run: `php artisan tinker --execute="foreach (App\Models\Quest::orderBy('slug')->get() as \$q) { echo \$q->slug.': '.\$q->nodes()->count().' node, start='.(\$q->startNode?->key ?? 'NULL').\"\n\"; }"`
-Expected: tiap misi punya `start` yang tidak `NULL`; `goblin-cave`, `patroli-tembok`, dan `antar-surat` jumlah node-nya **sama** dengan catatan Step 1
+Expected: `goblin-cave`, `patroli-tembok`, dan `antar-surat` jumlah node-nya **sama** dengan catatan Step 1; setiap misi punya `start` yang tidak `NULL`
 
 - [ ] **Step 7: Run the full suite**
 
 Run: `php artisan test`
-Expected: PASS — 196 test, nol gagal
+Expected: PASS — 199 test, nol gagal
 
 - [ ] **Step 8: Measure the win**
 
@@ -1260,7 +1265,7 @@ Run: `git diff --stat database/content/quests/tikus-gudang.json`
 Expected: baris terhapus jauh lebih banyak daripada yang ditambah
 
 Run: `php -r "echo count(file('database/content/quests/kabar-desa.json')).\" baris untuk misi 5 node\n\";"`
-Expected: di bawah 40 baris — bandingkan dengan `patroli-tembok.json` yang 4 node butuh 46 baris
+Expected: di bawah 45 baris — bandingkan `patroli-tembok.json` yang 4 node butuh 46 baris
 
 - [ ] **Step 9: Commit**
 
@@ -1271,13 +1276,13 @@ git commit -m "tikus-gudang pakai bentuk ringkas + misi errand baru kabar-desa"
 
 ---
 
-### Task 8: Dokumentasi
+### Task 6: Dokumentasi
 
 **Files:**
 - Modify: `GAME.md` (bagian "Menulis konten (developer)")
 
 **Interfaces:**
-- Consumes: kontrak final dari Task 1–7
+- Consumes: kontrak final dari Task 1–5
 - Produces: dokumentasi yang cocok dengan kode
 
 - [ ] **Step 1: Update the content-authoring section**
@@ -1290,15 +1295,15 @@ Misi berpola tidak perlu ditulis node-per-node. Dua arketipe dikembangkan `App\S
 - **`hunt`** — `intro` → `fight` → `win` (reward) → `ending_win`, plus ending `lose`. Wajib: `monster` (dengan `slug`), `intro`, `fight`, `win`. Opsional: `lose`, `outro`, `reward`.
 - **`errand`** — `beats[]` dirantai berurutan → `win` (reward) → `ending_win`. Tanpa ending kalah. Wajib: `beats` (minimal satu), `win`.
 - Tanpa `reward`, node reward tidak dibuat dan prosa `win` pindah ke ending.
-- Tiap field prosa menerima string **atau** `{"title": "...", "body": "..."}` untuk menimpa judul default (judul `intro` = judul misi, `fight` = nama monster + "!", `win` = "Berhasil", `ending_win` = "Misi Tuntas", `lose` = "Kalah").
+- Tiap field prosa menerima string **atau** `{"title": "...", "body": "..."}` untuk menimpa judul default (judul `intro`/beat = judul misi, `fight` = nama monster + "!", `win` = "Berhasil", `ending_win` = "Misi Tuntas", `lose` = "Kalah").
 - **Monster cukup `{"slug", "name", "level"}`** — stat diturunkan `Monster::statsForLevel()` (lv1 = hp 3 / atk 1 / def 0 / xp 30 / emas 10, naik linear). Field stat yang ditulis eksplisit selalu menimpa rumus; field tak dikenal (mis. `magik_attack`) membuat import gagal.
-- Misi **bercabang** tetap ditulis long-form (`nodes`) — lihat `goblin-cave.json`, `patroli-tembok.json`, dan `antar-surat.json` yang semuanya punya pilihan bercabang. Bentuk ringkas dan `nodes` tidak boleh dicampur dalam satu file.
+- Misi **bercabang** tetap ditulis long-form (`nodes`) — lihat `goblin-cave.json`, `patroli-tembok.json`, dan `antar-surat.json`. Bentuk ringkas dan `nodes` tidak boleh dicampur dalam satu file.
 - Contoh ringkas: `tikus-gudang.json` (hunt) & `kabar-desa.json` (errand).
 ```
 
 - [ ] **Step 2: Update the test count**
 
-In `GAME.md`, find the line starting with `php artisan test     # 165 test` and change the count to the number reported by the full suite, adding `QuestTemplate` to the list of suites.
+In `GAME.md`, find the line starting with `php artisan test     # 165 test` and change the count to the number reported by the full suite, adding `QuestTemplate` to the daftar suite.
 
 - [ ] **Step 3: Verify the documented claims are true**
 

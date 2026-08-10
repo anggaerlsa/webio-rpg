@@ -7,61 +7,27 @@
     "cover_image": null,
     "min_level": 1,
     "order": 2,
-    "start_node": "intro",
-    "nodes": [
-        {
-            "key": "intro",
-            "type": "narrative",
+    "hunt": {
+        "monster": { "slug": "tikus-raksasa", "name": "Tikus Raksasa", "level": 1 },
+        "intro": {
             "title": "Gudang Berdebu",
             "body": "Bau apek dan cericit menyambutmu. Di antara tumpukan peti, sepasang mata merah berkilat. Seekor tikus raksasa menggeram, menjaga wilayahnya.",
-            "choices": [
-                { "label": "Hadapi tikus itu", "next": "fight" }
-            ]
+            "label": "Hadapi tikus itu"
         },
-        {
-            "key": "fight",
-            "type": "combat",
-            "title": "Tikus Raksasa!",
-            "body": "Tikus itu melompat dengan gigi kuning terbuka.",
-            "monster": "tikus-raksasa",
-            "payload": { "on_win_node_key": "win", "on_lose_node_key": "lose" }
-        },
-        {
-            "key": "win",
-            "type": "reward",
+        "fight": "Tikus itu melompat dengan gigi kuning terbuka.",
+        "win": {
             "title": "Gudang Aman",
             "body": "Tikus itu kabur ke lubang dindingnya, tak akan kembali untuk sementara. Juru tulis menyelipkan beberapa koin sebagai tanda terima kasih.",
-            "payload": { "xp": 15, "gold": 15 },
-            "choices": [
-                { "label": "Laporkan ke guild", "next": "ending_win", "is_auto": true }
-            ]
+            "label": "Laporkan ke guild"
         },
-        {
-            "key": "ending_win",
-            "type": "ending",
+        "outro": {
             "title": "Misi Tuntas",
-            "body": "Gudang kembali tenang. Tugas kecil, tapi setiap reputasi dibangun dari hal-hal seperti ini.",
-            "payload": { "result": "victory" }
+            "body": "Gudang kembali tenang. Tugas kecil, tapi setiap reputasi dibangun dari hal-hal seperti ini."
         },
-        {
-            "key": "lose",
-            "type": "ending",
+        "lose": {
             "title": "Dikalahkan Hama",
-            "body": "Memalukan — kau mundur dari seekor tikus. Pulihkan diri dan coba lagi.",
-            "payload": { "result": "defeat" }
-        }
-    ],
-    "monsters": [
-        {
-            "slug": "tikus-raksasa",
-            "name": "Tikus Raksasa",
-            "image": null,
-            "max_hp": 3,
-            "attack": 1,
-            "defense": 0,
-            "xp_reward": 30,
-            "gold_reward": 10,
-            "loot": []
-        }
-    ]
+            "body": "Memalukan — kau mundur dari seekor tikus. Pulihkan diri dan coba lagi."
+        },
+        "reward": { "xp": 15, "gold": 15 }
+    }
 }

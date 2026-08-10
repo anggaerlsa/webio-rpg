@@ -9,15 +9,17 @@ use App\Models\Quest;
 use App\Models\QuestNode;
 use App\Models\Skill;
 use App\Models\Spell;
+use App\Services\QuestTemplate;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 
 /**
- * Import game content (quests, nodes, monsters, questions, items) from the JSON
+ * Import game content (quests, nodes, monsters, items) from the JSON
  * files in database/content. Idempotent: natural keys (slug / quest+key) upsert,
- * and child rows (choices/questions) are replaced so re-running converges.
+ * and child rows (choices) are replaced so re-running converges.
  */
 class ImportGameContent extends Command
 {
@@ -130,6 +132,10 @@ class ImportGameContent extends Command
     private function importQuests(string $dir): void
     {
         foreach ($this->jsonFiles($dir) as $data) {
+            // Bentuk ringkas (hunt/errand) dikembangkan jadi node long-form dulu,
+            // supaya sisa jalur di bawah ini tidak perlu tahu template itu ada.
+            $data = QuestTemplate::expand($data);
+
             // Embedded monsters first so nodes can resolve monster_id by slug.
             foreach ($data['monsters'] ?? [] as $monsterData) {
                 $this->upsertMonster($monsterData);
@@ -190,20 +196,71 @@ class ImportGameContent extends Command
         }
     }
 
+    /**
+     * Field yang boleh muncul di blok monster konten. Salah tulis harus gagal
+     * keras — field yang diam-diam diabaikan itu jebakan saat menyeimbangkan.
+     */
+    private const MONSTER_FIELDS = [
+        'slug', 'name', 'level', 'image', 'max_hp', 'attack', 'defense',
+        'magic_attack', 'magic_defense', 'attack_kind', 'xp_reward', 'gold_reward', 'loot',
+    ];
+
     /** @param array<string, mixed> $data */
     private function upsertMonster(array $data): void
     {
-        Monster::updateOrCreate(['slug' => $data['slug']], [
+        $slug = $data['slug'] ?? null;
+        if (! is_string($slug) || $slug === '') {
+            throw new RuntimeException('Ada blok monster tanpa `slug`.');
+        }
+        if (! isset($data['name'])) {
+            throw new RuntimeException("Monster `{$slug}`: `name` wajib diisi.");
+        }
+
+        $unknown = array_diff(array_keys($data), self::MONSTER_FIELDS);
+        if ($unknown !== []) {
+            throw new RuntimeException("Monster `{$slug}`: field tak dikenal — ".implode(', ', $unknown).'.');
+        }
+
+        if (array_key_exists('level', $data) && (! is_int($data['level']) || $data['level'] < 1)) {
+            throw new RuntimeException("Monster `{$slug}`: `level` harus integer ≥ 1.");
+        }
+
+        if (isset($data['loot']) && ! is_array($data['loot'])) {
+            throw new RuntimeException("Monster `{$slug}`: `loot` harus berupa array.");
+        }
+
+        if (isset($data['attack_kind']) && ! in_array($data['attack_kind'], ['physical', 'magic'], true)) {
+            throw new RuntimeException("Monster `{$slug}`: `attack_kind` harus `physical` atau `magic`.");
+        }
+
+        // Rumus level jadi dasar; field yang ditulis eksplisit menimpanya.
+        $stats = isset($data['level']) ? Monster::statsForLevel($data['level']) : [];
+        foreach (['max_hp', 'attack', 'defense', 'magic_attack', 'magic_defense', 'xp_reward', 'gold_reward'] as $field) {
+            if (isset($data[$field])) {
+                if (! is_int($data[$field]) || $data[$field] < 0) {
+                    throw new RuntimeException("Monster `{$slug}`: `{$field}` harus integer ≥ 0.");
+                }
+                $stats[$field] = $data[$field];
+            }
+        }
+
+        foreach (['max_hp', 'attack'] as $field) {
+            if (! isset($stats[$field])) {
+                throw new RuntimeException("Monster `{$slug}`: `{$field}` wajib bila `level` tidak diisi.");
+            }
+        }
+
+        Monster::updateOrCreate(['slug' => $slug], [
             'name' => $data['name'],
             'image' => $data['image'] ?? null,
-            'max_hp' => $data['max_hp'],
-            'attack' => $data['attack'],
-            'defense' => $data['defense'] ?? 0,
-            'magic_attack' => $data['magic_attack'] ?? 0,
-            'magic_defense' => $data['magic_defense'] ?? 0,
+            'max_hp' => $stats['max_hp'],
+            'attack' => $stats['attack'],
+            'defense' => $stats['defense'] ?? 0,
+            'magic_attack' => $stats['magic_attack'] ?? 0,
+            'magic_defense' => $stats['magic_defense'] ?? 0,
             'attack_kind' => $data['attack_kind'] ?? 'physical',
-            'xp_reward' => $data['xp_reward'] ?? 0,
-            'gold_reward' => $data['gold_reward'] ?? 0,
+            'xp_reward' => $stats['xp_reward'] ?? 0,
+            'gold_reward' => $stats['gold_reward'] ?? 0,
             'loot' => $data['loot'] ?? null,
         ]);
     }

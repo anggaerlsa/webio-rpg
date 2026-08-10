@@ -1,0 +1,35 @@
+{
+    "slug": "kabar-desa",
+    "title": "Kabar dari Desa Seberang",
+    "description": "Seorang juru tulis guild butuh kurir untuk membawa kabar ke desa seberang bukit. Tak ada monster, hanya jalan panjang dan kaki yang pegal.",
+    "affiliation": "merchant",
+    "required_rank": "F",
+    "cover_image": null,
+    "min_level": 1,
+    "order": 5,
+    "errand": {
+        "beats": [
+            {
+                "title": "Meja Juru Tulis",
+                "body": "Juru tulis menyerahkan gulungan tipis bersegel lilin biru. \"Jangan dibaca,\" katanya tanpa mengangkat kepala. \"Dan jangan sampai basah.\""
+            },
+            {
+                "title": "Jalan Bukit",
+                "body": "Jalan tanah menanjak di antara ladang gandum. Angin membawa bau hujan dari kejauhan, tapi langit masih terang sampai kau melewati punggung bukit."
+            },
+            {
+                "title": "Desa Seberang",
+                "body": "Anak-anak berhenti bermain dan menatapmu. Seorang perempuan tua menunjuk rumah beratap jerami di ujung jalan tanpa perlu kau bertanya."
+            }
+        ],
+        "win": {
+            "title": "Gulungan Berpindah Tangan",
+            "body": "Segel lilin biru dibuka di depanmu, dibaca cepat, lalu diikuti anggukan puas. Beberapa koin diserahkan tanpa ditawar."
+        },
+        "outro": {
+            "title": "Kembali Sebelum Hujan",
+            "body": "Kau berjalan pulang dengan kantung sedikit lebih berat. Hujan akhirnya turun tepat setelah kau melewati gerbang kota."
+        },
+        "reward": { "xp": 12, "gold": 18 }
+    }
+}
