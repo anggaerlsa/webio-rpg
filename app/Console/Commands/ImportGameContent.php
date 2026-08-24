@@ -66,7 +66,7 @@ class ImportGameContent extends Command
         $this->warn('Wiping content + player progress (keeping users & characters)...');
         Schema::disableForeignKeyConstraints();
         foreach ([
-            'node_choices', 'combat_questions', 'quest_nodes', 'quests',
+            'node_choices', 'quest_nodes', 'quests',
             'monsters', 'items', 'skills', 'combat_sessions',
             'character_items', 'character_skill', 'character_spell', 'game_saves',
         ] as $table) {

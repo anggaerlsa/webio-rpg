@@ -168,7 +168,6 @@ class CombatService
                 'monster_id' => $monster->id,
                 'monster_hp' => $monster->max_hp,
                 'player_hp' => $character->hp,
-                'asked_question_ids' => [],
                 'status' => 'active',
                 'turn' => 0,
             ]);

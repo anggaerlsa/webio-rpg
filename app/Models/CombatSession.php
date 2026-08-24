@@ -15,7 +15,6 @@ class CombatSession extends Model
             'monster_hp' => 'integer',
             'player_hp' => 'integer',
             'turn' => 'integer',
-            'asked_question_ids' => 'array',
         ];
     }
 
