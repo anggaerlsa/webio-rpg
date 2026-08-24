@@ -153,6 +153,8 @@ class ImportGameContent extends Command
             ]);
 
             foreach ($data['nodes'] ?? [] as $nodeData) {
+                $this->assertPayloadKeys($data['slug'], $nodeData);
+
                 $monsterId = empty($nodeData['monster'])
                     ? null
                     : Monster::where('slug', $nodeData['monster'])->value('id');
@@ -193,6 +195,67 @@ class ImportGameContent extends Command
             }
 
             $this->line("  - quest '{$quest->slug}' (".count($data['nodes'] ?? []).' nodes)');
+        }
+    }
+
+    /**
+     * Kunci payload yang BENAR-BENAR dibaca mesin, per tipe node. Kunci lain
+     * (mis. `exp` alih-alih `xp`) tidak berefek apa pun saat dimainkan — itu
+     * jebakan paling mahal buat penulis konten, jadi ditolak keras di sini.
+     * Tipe node yang tidak terdaftar payload-nya dibiarkan bebas.
+     *
+     * @var array<string, list<string>>
+     */
+    private const NODE_PAYLOAD_FIELDS = [
+        'reward' => ['xp', 'gold', 'item_slugs'],   // StoryEngine::onEnterNode
+        'ending' => ['result'],                     // StoryEngine::onEnterNode
+        'combat' => ['on_win_node_key', 'on_lose_node_key'], // CombatService::advanceStory
+    ];
+
+    /**
+     * Pastikan payload sebuah adegan hanya memakai kunci yang dikenal, dan nilai
+     * reward memang bisa dipakai. Dipanggil untuk SEMUA adegan — bentuk ringkas
+     * maupun long-form lewat loop yang sama, jadi satu tempat menutup keduanya.
+     *
+     * @param  array<string, mixed>  $nodeData
+     */
+    private function assertPayloadKeys(string $questSlug, array $nodeData): void
+    {
+        $type = $nodeData['type'] ?? 'narrative';
+        $allowed = self::NODE_PAYLOAD_FIELDS[$type] ?? null;
+        $payload = $nodeData['payload'] ?? null;
+        $key = $nodeData['key'] ?? '(tanpa key)';
+
+        if ($allowed === null || $payload === null) {
+            return;
+        }
+        if (! is_array($payload)) {
+            throw new RuntimeException("Misi `{$questSlug}`: `payload` adegan `{$key}` harus berupa objek.");
+        }
+
+        $unknown = array_diff(array_keys($payload), $allowed);
+        if ($unknown !== []) {
+            throw new RuntimeException(
+                "Misi `{$questSlug}`: adegan `{$key}` ({$type}) punya kunci payload tak dikenal — "
+                .implode(', ', $unknown).'. Yang dikenal: '.implode(', ', $allowed).'.'
+            );
+        }
+
+        if ($type !== 'reward') {
+            return;
+        }
+
+        foreach (['xp', 'gold'] as $field) {
+            if (isset($payload[$field]) && (! is_numeric($payload[$field]) || (int) $payload[$field] < 0)) {
+                throw new RuntimeException("Misi `{$questSlug}`: adegan `{$key}` — `payload.{$field}` harus angka ≥ 0.");
+            }
+        }
+
+        if (isset($payload['item_slugs'])) {
+            $slugs = $payload['item_slugs'];
+            if (! is_array($slugs) || array_filter($slugs, fn ($s) => ! is_string($s) || $s === '') !== []) {
+                throw new RuntimeException("Misi `{$questSlug}`: adegan `{$key}` — `payload.item_slugs` harus daftar slug item.");
+            }
         }
     }
 

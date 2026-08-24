@@ -107,4 +107,132 @@ class QuestTemplateImportTest extends TestCase
         $this->assertSame('won', $result['status']);
         $this->assertSame('win', $result['next_node']['node_key']);
     }
+
+    // ── Validasi payload adegan (berlaku untuk bentuk ringkas & long-form) ───
+
+    /**
+     * `assertPayloadKeys` privat — dipanggil lewat reflection supaya satu adegan
+     * bisa diuji tanpa menulis file JSON sementara.
+     *
+     * @param  array<string, mixed>  $node
+     */
+    private function assertPayload(array $node): void
+    {
+        $command = app(\App\Console\Commands\ImportGameContent::class);
+        $method = new \ReflectionMethod($command, 'assertPayloadKeys');
+        $method->setAccessible(true);
+        $method->invoke($command, 'misi-uji', $node);
+    }
+
+    public function test_reward_payload_typo_is_rejected_instead_of_silently_awarding_nothing(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('exp');
+        $this->assertPayload(['key' => 'win', 'type' => 'reward', 'payload' => ['exp' => 15]]);
+    }
+
+    public function test_the_rejection_names_the_quest_and_the_scene(): void
+    {
+        try {
+            $this->assertPayload(['key' => 'win', 'type' => 'reward', 'payload' => ['exp' => 15]]);
+            $this->fail('Kunci payload tak dikenal seharusnya ditolak.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('misi-uji', $e->getMessage());
+            $this->assertStringContainsString('win', $e->getMessage());
+            $this->assertStringContainsString('xp, gold, item_slugs', $e->getMessage()); // sebut yang benar
+        }
+    }
+
+    public function test_a_valid_reward_payload_passes(): void
+    {
+        $this->assertPayload([
+            'key' => 'win', 'type' => 'reward',
+            'payload' => ['xp' => 15, 'gold' => 20, 'item_slugs' => ['potion']],
+        ]);
+
+        $this->addToAssertionCount(1); // tidak melempar = lulus
+    }
+
+    public function test_ending_payload_typo_is_rejected(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('hasil');
+        $this->assertPayload(['key' => 'ending_win', 'type' => 'ending', 'payload' => ['hasil' => 'victory']]);
+    }
+
+    public function test_combat_routing_typo_is_rejected(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('on_win_node');
+        $this->assertPayload([
+            'key' => 'fight', 'type' => 'combat',
+            'payload' => ['on_win_node' => 'win', 'on_lose_node_key' => 'lose'],
+        ]);
+    }
+
+    public function test_non_object_payload_is_rejected(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('harus berupa objek');
+        $this->assertPayload(['key' => 'win', 'type' => 'reward', 'payload' => 'lima belas xp']);
+    }
+
+    public function test_non_numeric_reward_amount_is_rejected(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('`payload.xp` harus angka');
+        $this->assertPayload(['key' => 'win', 'type' => 'reward', 'payload' => ['xp' => 'banyak']]);
+    }
+
+    public function test_negative_reward_amount_is_rejected(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('`payload.gold` harus angka');
+        $this->assertPayload(['key' => 'win', 'type' => 'reward', 'payload' => ['gold' => -5]]);
+    }
+
+    public function test_malformed_item_slugs_is_rejected(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('item_slugs` harus daftar slug');
+        $this->assertPayload(['key' => 'win', 'type' => 'reward', 'payload' => ['item_slugs' => 'potion']]);
+    }
+
+    public function test_unlisted_node_types_keep_their_payload_freedom(): void
+    {
+        $this->assertPayload(['key' => 'intro', 'type' => 'narrative', 'payload' => ['apa_saja' => true]]);
+
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_import_aborts_on_a_typo_ed_reward_and_persists_nothing(): void
+    {
+        // Lewat bentuk ringkas: `exp` bukan `xp`. Dulu ini terimpor bersih lalu
+        // pemain tidak dapat apa pun — sekarang harus menggagalkan seluruh import.
+        $this->path = database_path('content/quests/uji-reward-rusak.json');
+        File::put($this->path, json_encode([
+            'slug' => 'uji-reward-rusak',
+            'title' => 'Uji Reward Rusak',
+            'affiliation' => 'adventurer',
+            'hunt' => [
+                'monster' => ['slug' => 'kelinci-rusak', 'name' => 'Kelinci Rusak', 'level' => 1],
+                'intro' => 'Seekor kelinci menghadangmu.',
+                'fight' => 'Kelinci itu menerjang.',
+                'win' => 'Kelinci itu kabur.',
+                'reward' => ['exp' => 15, 'gold' => 5],
+            ],
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        try {
+            $this->artisan('game:import');
+            $this->fail('Import dengan kunci reward salah seharusnya gagal.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('uji-reward-rusak', $e->getMessage());
+            $this->assertStringContainsString('exp', $e->getMessage());
+        }
+
+        // Satu transaksi: tidak boleh ada sisa data dari file yang gagal.
+        $this->assertDatabaseMissing('quests', ['slug' => 'uji-reward-rusak']);
+        $this->assertDatabaseMissing('monsters', ['slug' => 'kelinci-rusak']);
+    }
 }
