@@ -186,7 +186,7 @@ Misi berpola tidak perlu ditulis node-per-node. Dua arketipe dikembangkan `App\S
 
 ## Test
 ```powershell
-php artisan test     # 206 test (auth bawaan + CombatService/StoryEngine/GameFlow/Admin/World/Inventory/Profil/Pemain/Town/RankMission/Equipment/Learning/FriendChat/Forum/QuestTemplate)
+php artisan test     # 219 test (auth bawaan + CombatService/StoryEngine/GameFlow/Admin/World/Inventory/Profil/Pemain/Town/RankMission/Equipment/Learning/FriendChat/Forum/QuestTemplate)
 ```
 Test memakai SQLite in-memory — **tidak** menyentuh database `webio`.
 
