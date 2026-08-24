@@ -21,7 +21,7 @@ pemain memilih skill/spell yang dikuasai (semua punya **Pukul** secara default),
 
 ## Combat (model serangan)
 - **Dua jalur serangan yang terpisah penuh** — `app/Services/Combat/`: `PhysicalAttack` (skill, **SP**, diskala **STR**, diperkuat `attack`, ditahan `defense`+**VIT**) dan `MagicalAttack` (sihir, **MP**, diskala **INT**, diperkuat `magic_attack`, ditahan `magic_defense`+**INT**). Keduanya turunan `AttackModule`; `CombatService` cuma memilih modul lalu memakainya, jadi menambah jalur baru tidak menyentuh mesin combat. Stat karakter: `attack`/`defense` (fisik) & `magic_attack`/`magic_defense` (sihir) — keduanya tumbuh sama saat naik level (+2/+1) dan bisa ditambah perlengkapan.
-- **Monster punya kedua sisi juga:** `attack`/`defense` + `magic_attack`/`magic_defense`, dan `attack_kind` (`physical`|`magic`) menentukan serangan baliknya lewat jalur mana — karena itu pertahanan pemain yang mana yang dipakai. Monster ber-`attack_kind = magic` tapi `magic_attack = 0` otomatis kembali ke jalur fisik (biar salah setel tidak membuatnya tak berbahaya). Diatur di Panel Dewa → Monster.
+- **Monster punya kedua sisi juga:** `attack`/`defense` + `magic_attack`/`magic_defense`, dan `attack_kind` (`physical`|`magic`) menentukan serangan baliknya lewat jalur mana — karena itu pertahanan pemain yang mana yang dipakai. Monster ber-`attack_kind = magic` tapi `magic_attack = 0` otomatis kembali ke jalur fisik saat bertarung (jaring pengaman runtime) — tapi kombinasi itu kini **ditolak saat dibuat**, baik lewat `game:import` maupun form Panel Dewa, karena penulis konten tidak boleh ditipu monster sihir yang ternyata memukul. Diatur di Panel Dewa → Monster.
 - Tiap giliran pemain memilih **serangan** (skill atau spell yang dikuasai). Damage ke monster = `max(1, damage_modul − ⌊pertahanan_jalur_itu/2⌋)`. Lalu **monster membalas** lewat jalurnya sendiri. Ulang sampai HP monster atau pemain habis.
 - **Pukul** = skill `is_default` (power 1) yang dimiliki setiap karakter sejak dibuat. Skill/spell lain di-gate level/pengetahuan — cara perolehannya (scroll/beli/baca) menyusul.
 - Karakter menyimpan daftar skill (`character_skill`) & spell (`character_spell`) yang dikuasai.
@@ -134,7 +134,7 @@ Misi berpola tidak perlu ditulis node-per-node. Dua arketipe dikembangkan `App\S
 - **`hunt`** — `intro` → `fight` → `win` (reward) → `ending_win`, plus ending `lose`. Wajib: `monster` (dengan `slug`), `intro`, `fight`, `win`. Opsional: `lose`, `outro`, `reward`.
 - **`errand`** — `beats[]` dirantai berurutan → `win` (reward) → `ending_win`. Tanpa ending kalah. Wajib: `beats` (minimal satu), `win`.
 - Tanpa `reward`, node reward tidak dibuat dan prosa `win` pindah ke ending. Deteksi berbasis **keberadaan key**, bukan isinya: `"reward": {}` tetap membuat node reward; key `reward` hilang atau bernilai `null` yang tidak.
-- Tiap field prosa menerima string **atau** `{"title": "...", "body": "...", "label": "..."}` untuk menimpa judul default (judul `intro`/beat = judul misi, `fight` = nama monster + "!", `win` = "Berhasil", `ending_win` = "Misi Tuntas", `lose` = "Kalah") dan/atau label tombol pilihan node itu (default "Hadapi" di `intro` milik `hunt`, "Lanjutkan" di tempat lain).
+- Tiap field prosa menerima string **atau** `{"title": "...", "body": "...", "label": "..."}` untuk menimpa judul default (judul `intro`/beat = judul misi, `fight` = nama monster + "!", `win` = "Berhasil", `ending_win` = "Misi Tuntas", `lose` = "Kalah") dan/atau label tombol pilihan node itu (default "Hadapi" di `intro` milik `hunt`, "Lanjutkan" di tempat lain). `label` hanya boleh di adegan yang PUNYA tombol — `intro`, tiap beat, dan `win` bila ada `reward`; di `fight`/`lose`/`outro` (dan `win` tanpa reward) ia tak akan pernah tampil, jadi **import ditolak**. Judul/label kosong dianggap tidak ditulis (jatuh ke default), bukan dirender kosong.
 - **Monster cukup `{"slug", "name", "level"}`** — stat diturunkan `Monster::statsForLevel()` (lv1 = hp 3 / atk 1 / def 0 / xp 30 / emas 10, naik linear). Field stat yang ditulis eksplisit selalu menimpa rumus; field tak dikenal (mis. `magik_attack`) membuat import gagal.
 - Misi **bercabang** tetap ditulis long-form (`nodes`) — lihat `goblin-cave.json`, `patroli-tembok.json`, dan `antar-surat.json`. Bentuk ringkas dan `nodes` tidak boleh dicampur dalam satu file.
 - Contoh ringkas: `tikus-gudang.json` (hunt) & `kabar-desa.json` (errand).
@@ -188,7 +188,7 @@ Misi berpola tidak perlu ditulis node-per-node. Dua arketipe dikembangkan `App\S
 
 ## Test
 ```powershell
-php artisan test     # 235 test (auth bawaan + CombatService/StoryEngine/GameFlow/Admin/World/Inventory/Profil/Pemain/Town/RankMission/Equipment/Learning/FriendChat/Forum/QuestTemplate)
+php artisan test     # 244 test (auth bawaan + CombatService/StoryEngine/GameFlow/Admin/World/Inventory/Profil/Pemain/Town/RankMission/Equipment/Learning/FriendChat/Forum/QuestTemplate)
 ```
 Test memakai SQLite in-memory — **tidak** menyentuh database `webio`.
 

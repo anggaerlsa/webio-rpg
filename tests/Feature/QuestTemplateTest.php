@@ -480,4 +480,53 @@ class QuestTemplateTest extends TestCase
         $this->expectExceptionMessage('salah satu');
         QuestTemplate::expand($quest);
     }
+
+    // ── Label di adegan tanpa tombol ────────────────────────────────────────
+
+    public function test_label_on_the_fight_scene_is_rejected(): void
+    {
+        $quest = $this->huntQuest(['fight' => ['body' => 'Ia menerjang.', 'label' => 'Serang!']]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('`hunt.fight.label` tidak akan tampil');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_label_on_the_lose_ending_is_rejected(): void
+    {
+        $quest = $this->huntQuest(['lose' => ['body' => 'Kau tumbang.', 'label' => 'Coba lagi']]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('`hunt.lose.label`');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_win_label_is_rejected_when_there_is_no_reward(): void
+    {
+        // Tanpa reward, prosa `win` pindah ke ending yang tidak punya tombol.
+        $quest = $this->huntQuest(['win' => ['body' => 'Ia kabur.', 'label' => 'Laporkan']]);
+        unset($quest['hunt']['reward']);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('`hunt.win.label`');
+        QuestTemplate::expand($quest);
+    }
+
+    public function test_win_label_is_allowed_when_a_reward_node_exists(): void
+    {
+        $quest = $this->huntQuest(['win' => ['body' => 'Ia kabur.', 'label' => 'Laporkan ke guild']]);
+
+        $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
+
+        $this->assertSame('Laporkan ke guild', $nodes['win']['choices'][0]['label']);
+    }
+
+    public function test_errand_outro_label_is_rejected(): void
+    {
+        $quest = $this->errandQuest(['outro' => ['body' => 'Kau pulang.', 'label' => 'Pulang']]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('`errand.outro.label`');
+        QuestTemplate::expand($quest);
+    }
 }

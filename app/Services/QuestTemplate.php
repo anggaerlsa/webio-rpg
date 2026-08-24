@@ -97,6 +97,15 @@ class QuestTemplate
         $hasReward = $reward !== null;
         $afterFight = $hasReward ? 'win' : 'ending_win';
 
+        // Label hanya berarti di adegan yang punya tombol; tanpa reward, prosa
+        // `win` pindah ke ending yang juga tak punya tombol.
+        self::assertLabelIsUsable($slug, 'hunt.fight', $fight);
+        self::assertLabelIsUsable($slug, 'hunt.lose', $lose);
+        self::assertLabelIsUsable($slug, 'hunt.outro', $outro);
+        if (! $hasReward) {
+            self::assertLabelIsUsable($slug, 'hunt.win', $win);
+        }
+
         $nodes = [
             [
                 'key' => 'intro',
@@ -151,6 +160,11 @@ class QuestTemplate
         $reward = self::reward($slug, 'errand', $errand);
         $hasReward = $reward !== null;
         $afterBeats = $hasReward ? 'win' : 'ending_win';
+
+        self::assertLabelIsUsable($slug, 'errand.outro', $outro);
+        if (! $hasReward) {
+            self::assertLabelIsUsable($slug, 'errand.win', $win);
+        }
 
         $nodes = [];
         $beats = array_values($beats);
@@ -238,6 +252,19 @@ class QuestTemplate
             'body' => $hasReward ? ($outro['body'] ?? self::DEFAULT_OUTRO) : $win['body'],
             'payload' => ['result' => 'victory'],
         ];
+    }
+
+    /**
+     * Adegan tanpa tombol pilihan tidak pernah menampilkan `label`. Menerimanya
+     * diam-diam sama saja menelan tulisan penulis konten — jadi ditolak.
+     *
+     * @param  array{title: ?string, body: ?string, label: ?string}  $prose
+     */
+    private static function assertLabelIsUsable(string $slug, string $field, array $prose): void
+    {
+        if (($prose['label'] ?? null) !== null) {
+            throw new RuntimeException("Misi `{$slug}`: `{$field}.label` tidak akan tampil — adegan itu tidak punya tombol pilihan.");
+        }
     }
 
     /**

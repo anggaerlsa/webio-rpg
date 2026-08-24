@@ -235,4 +235,19 @@ class QuestTemplateImportTest extends TestCase
         $this->assertDatabaseMissing('quests', ['slug' => 'uji-reward-rusak']);
         $this->assertDatabaseMissing('monsters', ['slug' => 'kelinci-rusak']);
     }
+
+    public function test_importing_the_same_shorthand_twice_converges(): void
+    {
+        $this->importShorthandQuest();
+        $quest = Quest::where('slug', 'uji-integrasi')->firstOrFail();
+        $firstNodeIds = $quest->nodes()->orderBy('id')->pluck('id')->all();
+
+        $this->artisan('game:import')->assertSuccessful();
+
+        $quest->refresh();
+        $this->assertSame(5, $quest->nodes()->count());          // tidak berlipat
+        $this->assertSame($firstNodeIds, $quest->nodes()->orderBy('id')->pluck('id')->all());
+        $this->assertSame(1, $quest->nodes()->where('key', 'intro')->first()->choices()->count());
+        $this->assertSame(1, Monster::where('slug', 'kelinci-uji')->count());
+    }
 }

@@ -7,6 +7,7 @@ use App\Models\Monster;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -89,6 +90,14 @@ class MonsterController extends Controller
         $data['magic_attack'] = $data['magic_attack'] ?? 0;
         $data['magic_defense'] = $data['magic_defense'] ?? 0;
         $data['attack_kind'] = $data['attack_kind'] ?? 'physical';
+
+        // Sama seperti validasi importer: monster berjalur sihir tanpa Serangan
+        // Sihir akan bertarung fisik, jadi tolak di form daripada membingungkan.
+        if ($data['attack_kind'] === 'magic' && $data['magic_attack'] < 1) {
+            throw ValidationException::withMessages([
+                'magic_attack' => 'Jalur sihir butuh Serangan Sihir minimal 1.',
+            ]);
+        }
         $data['xp_reward'] = $data['xp_reward'] ?? 0;
         $data['gold_reward'] = $data['gold_reward'] ?? 0;
         $data['loot'] = ($data['loot'] ?? '') !== '' ? json_decode($data['loot'], true) : null;

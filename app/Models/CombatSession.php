@@ -33,9 +33,4 @@ class CombatSession extends Model
     {
         return $this->belongsTo(Monster::class);
     }
-
-    public function currentQuestion(): BelongsTo
-    {
-        return $this->belongsTo(CombatQuestion::class, 'current_question_id');
-    }
 }

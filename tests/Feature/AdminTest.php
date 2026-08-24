@@ -207,4 +207,16 @@ class AdminTest extends TestCase
 
         $this->assertSame($node->id, $quest->fresh()->start_node_id);
     }
+
+    public function test_magic_monster_form_requires_magic_attack(): void
+    {
+        $admin = $this->superadmin();
+
+        $this->actingAs($admin)->post('/admin/monsters', [
+            'slug' => 'penyihir-form', 'name' => 'Penyihir Form', 'max_hp' => 8, 'attack' => 2,
+            'attack_kind' => 'magic', 'magic_attack' => 0,
+        ])->assertSessionHasErrors('magic_attack');
+
+        $this->assertDatabaseMissing('monsters', ['slug' => 'penyihir-form']);
+    }
 }

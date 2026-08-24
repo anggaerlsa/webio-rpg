@@ -21,11 +21,6 @@ class Monster extends Model
         ];
     }
 
-    public function questions(): HasMany
-    {
-        return $this->hasMany(CombatQuestion::class)->orderBy('order');
-    }
-
     public function nodes(): HasMany
     {
         return $this->hasMany(QuestNode::class);

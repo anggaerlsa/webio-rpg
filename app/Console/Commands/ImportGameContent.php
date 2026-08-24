@@ -313,6 +313,12 @@ class ImportGameContent extends Command
             }
         }
 
+        // Jalur sihir tanpa kekuatan sihir akan jatuh kembali ke fisik saat bertarung
+        // (CombatService::monsterModule) — penulis konten harus tahu, bukan ditipu.
+        if (($data['attack_kind'] ?? 'physical') === 'magic' && ($stats['magic_attack'] ?? 0) < 1) {
+            throw new RuntimeException("Monster `{$slug}`: `attack_kind` sihir butuh `magic_attack` ≥ 1 — rumus level tidak mengisinya.");
+        }
+
         Monster::updateOrCreate(['slug' => $slug], [
             'name' => $data['name'],
             'image' => $data['image'] ?? null,

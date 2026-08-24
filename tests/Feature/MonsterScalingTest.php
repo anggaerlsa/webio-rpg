@@ -153,4 +153,28 @@ class MonsterScalingTest extends TestCase
         $method->setAccessible(true);
         $method->invoke($command, $data);
     }
+
+    public function test_magic_attack_kind_without_magic_power_is_rejected(): void
+    {
+        // Rumus level tidak mengisi magic_attack, jadi monster ini akan bertarung
+        // fisik tanpa pemberitahuan — harus ditolak saat import.
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('butuh `magic_attack`');
+        $this->upsertMonster([
+            'slug' => 'penyihir-kosong', 'name' => 'Penyihir Kosong',
+            'level' => 3, 'attack_kind' => 'magic',
+        ]);
+    }
+
+    public function test_magic_attack_kind_with_explicit_power_is_accepted(): void
+    {
+        $this->upsertMonster([
+            'slug' => 'penyihir-sejati', 'name' => 'Penyihir Sejati',
+            'level' => 3, 'attack_kind' => 'magic', 'magic_attack' => 7,
+        ]);
+
+        $monster = Monster::where('slug', 'penyihir-sejati')->firstOrFail();
+        $this->assertSame('magic', $monster->attack_kind);
+        $this->assertSame(7, $monster->magic_attack);
+    }
 }
