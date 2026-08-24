@@ -127,6 +127,7 @@ php artisan game:import --fresh     # bersihkan konten + progres, lalu impor ula
   tiap node punya `choices[]` (`requirements`/`effects`), plus `monsters[]`.
 - `database/content/items/*.json` — katalog item.
 - **Payload adegan di-allow-list** (berlaku untuk bentuk ringkas maupun long-form, dijaga `ImportGameContent::assertPayloadKeys`): `reward` → `xp`/`gold`/`item_slugs`, `ending` → `result`, `combat` → `on_win_node_key`/`on_lose_node_key`. Kunci lain (mis. `exp` alih-alih `xp`) **menggagalkan import** — dulu terimpor bersih lalu pemain tidak dapat apa pun. `xp`/`gold` harus angka ≥ 0 dan `item_slugs` harus daftar slug. Tipe node lain payload-nya bebas.
+- Pilihan node = `{label, next, requirements?, effects?}`. **Tidak ada flag `is_auto`** — dulu ada tapi tidak pernah meneruskan otomatis apa pun, dan datanya membuktikan ia hanya bernilai true di node berpilihan tunggal (jadi tak membawa informasi apa pun di luar `choices.length === 1`). Sudah dibuang.
 - Contoh lengkap: `database/content/quests/goblin-cave.json`.
 
 ### Bentuk misi ringkas (`hunt` / `errand`)

@@ -26,7 +26,7 @@
             "body": "Benar saja — jari kecil hampir menyambar dompetmu. Kau menangkapnya, dan si copet menjatuhkan beberapa koin saat kabur.",
             "payload": { "xp": 10, "gold": 12 },
             "choices": [
-                { "label": "Lanjut mengantar", "next": "deliver", "is_auto": true }
+                { "label": "Lanjut mengantar", "next": "deliver" }
             ]
         },
         {

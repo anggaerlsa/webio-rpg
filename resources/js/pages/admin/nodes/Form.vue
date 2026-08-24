@@ -14,7 +14,6 @@ interface Choice {
     next_node_key: string;
     requirements: string;
     effects: string;
-    is_auto: boolean;
 }
 interface Node {
     id: number;
@@ -25,7 +24,7 @@ interface Node {
     image: string | null;
     monster_id: number | null;
     payload: unknown;
-    choices?: Array<{ label: string; next_node_key: string | null; requirements: unknown; effects: unknown; is_auto: boolean }>;
+    choices?: Array<{ label: string; next_node_key: string | null; requirements: unknown; effects: unknown }>;
 }
 interface MonsterLite {
     id: number;
@@ -62,12 +61,11 @@ const form = useForm({
         next_node_key: c.next_node_key ?? '',
         requirements: c.requirements ? JSON.stringify(c.requirements) : '',
         effects: c.effects ? JSON.stringify(c.effects) : '',
-        is_auto: !!c.is_auto,
     })) as Choice[],
 });
 
 function addChoice() {
-    form.choices.push({ label: '', next_node_key: '', requirements: '', effects: '', is_auto: false });
+    form.choices.push({ label: '', next_node_key: '', requirements: '', effects: '' });
 }
 function removeChoice(i: number) {
     form.choices.splice(i, 1);
@@ -196,10 +194,6 @@ const fieldClass = 'w-full rounded-md border border-input bg-background px-3 py-
                                 <InputError :message="cErr(ci, 'effects')" />
                             </div>
                         </div>
-                        <label class="flex items-center gap-2 text-sm">
-                            <input v-model="c.is_auto" type="checkbox" class="h-4 w-4 accent-primary" />
-                            Otomatis (tombol "lanjut" tunggal)
-                        </label>
                     </div>
                 </div>
 

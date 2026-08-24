@@ -122,7 +122,6 @@ class StoryEngine
                 return [
                     'id' => $c->id,
                     'label' => $c->label,
-                    'is_auto' => $c->is_auto,
                     'locked' => ! $met,
                     'hint' => $met ? null : $this->lockHint($c->requirements),
                 ];

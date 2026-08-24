@@ -181,7 +181,6 @@ class ImportGameContent extends Command
                         'requirements' => $choiceData['requirements'] ?? null,
                         'effects' => $choiceData['effects'] ?? null,
                         'order' => $choiceData['order'] ?? $i,
-                        'is_auto' => $choiceData['is_auto'] ?? false,
                     ]);
                 }
             }

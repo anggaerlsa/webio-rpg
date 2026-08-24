@@ -190,7 +190,7 @@ class AdminTest extends TestCase
             'title' => 'Awal',
             'body' => 'Kamu memasuki hutan.',
             'choices' => [
-                ['label' => 'Maju', 'next_node_key' => 'lanjut', 'is_auto' => false],
+                ['label' => 'Maju', 'next_node_key' => 'lanjut'],
             ],
         ])->assertRedirect(route('admin.quests.edit', $quest->id));
 

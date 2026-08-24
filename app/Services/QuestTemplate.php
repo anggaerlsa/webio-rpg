@@ -230,7 +230,7 @@ class QuestTemplate
             'title' => $win['title'] ?? 'Berhasil',
             'body' => $win['body'],
             'payload' => $reward,
-            'choices' => [['label' => $win['label'] ?? 'Lanjutkan', 'next' => 'ending_win', 'is_auto' => true]],
+            'choices' => [['label' => $win['label'] ?? 'Lanjutkan', 'next' => 'ending_win']],
         ];
     }
 

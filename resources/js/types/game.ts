@@ -92,7 +92,6 @@ export type NodeType = 'narrative' | 'choice' | 'combat' | 'reward' | 'ending';
 export interface ChoiceState {
     id: number;
     label: string;
-    is_auto: boolean;
     locked: boolean;
     hint: string | null;
 }

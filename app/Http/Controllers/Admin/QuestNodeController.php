@@ -86,7 +86,6 @@ class QuestNodeController extends Controller
             'choices.*.next_node_key' => ['nullable', 'string', 'max:80'],
             'choices.*.requirements' => ['nullable', 'string', $this->jsonRule()],
             'choices.*.effects' => ['nullable', 'string', $this->jsonRule()],
-            'choices.*.is_auto' => ['boolean'],
         ], [
             'key.required' => 'Key wajib diisi.',
             'key.unique' => 'Key sudah dipakai di misi ini.',
@@ -120,7 +119,6 @@ class QuestNodeController extends Controller
                 'next_node_key' => $c['next_node_key'] ?? null,
                 'requirements' => ($c['requirements'] ?? '') !== '' ? json_decode($c['requirements'], true) : null,
                 'effects' => ($c['effects'] ?? '') !== '' ? json_decode($c['effects'], true) : null,
-                'is_auto' => $c['is_auto'] ?? false,
                 'order' => $i,
             ]);
         }

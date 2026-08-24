@@ -51,7 +51,6 @@ class QuestTemplateTest extends TestCase
         $this->assertSame('lose', $nodes['fight']['payload']['on_lose_node_key']);
         $this->assertSame(['xp' => 15, 'gold' => 15], $nodes['win']['payload']);
         $this->assertSame('ending_win', $nodes['win']['choices'][0]['next']);
-        $this->assertTrue($nodes['win']['choices'][0]['is_auto']);
         $this->assertSame('victory', $nodes['ending_win']['payload']['result']);
         $this->assertSame('defeat', $nodes['lose']['payload']['result']);
     }
@@ -195,7 +194,6 @@ class QuestTemplateTest extends TestCase
         $nodes = $this->nodesByKey(QuestTemplate::expand($quest));
 
         $this->assertSame('Laporkan ke guild', $nodes['win']['choices'][0]['label']);
-        $this->assertTrue($nodes['win']['choices'][0]['is_auto']);
     }
 
     public function test_missing_lose_prose_uses_the_default_text(): void

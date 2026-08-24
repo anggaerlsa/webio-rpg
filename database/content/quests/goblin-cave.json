@@ -25,7 +25,7 @@
             "body": "Tepat di dalam, ransel petualang terdahulu tergeletak ditinggalkan. Kau menyelamatkan sebuah obor dan satu ramuan penyembuh dari sana.",
             "payload": { "item_slugs": ["torch", "potion"] },
             "choices": [
-                { "label": "Masuk lebih dalam", "next": "fork", "is_auto": true }
+                { "label": "Masuk lebih dalam", "next": "fork" }
             ]
         },
         {
@@ -58,7 +58,7 @@
             "body": "Cahaya obor menyingkap sebuah ceruk kecil dan peti yang lapuk. Di dalamnya: segenggam koin emas, berkilau meski termakan usia.",
             "payload": { "gold": 40, "xp": 15 },
             "choices": [
-                { "label": "Ambil emasnya dan hadapi lorong", "next": "goblin_fight", "is_auto": true }
+                { "label": "Ambil emasnya dan hadapi lorong", "next": "goblin_fight" }
             ]
         },
         {
@@ -68,7 +68,7 @@
             "body": "Hanya petualang berpengalaman yang sanggup memanjat ini. Di atas tebing, sebuah kantung yang terlupakan menumpahkan emas dan sebuah ramuan.",
             "payload": { "gold": 100, "xp": 50, "item_slugs": ["potion"] },
             "choices": [
-                { "label": "Turun ke arah geraman", "next": "goblin_fight", "is_auto": true }
+                { "label": "Turun ke arah geraman", "next": "goblin_fight" }
             ]
         },
         {
@@ -86,7 +86,7 @@
             "body": "Goblin itu ambruk ke lantai gua. Keheningan kembali, hanya dipecah tetesan air. Kau menggeledah sarangnya dan menemukan timbunan kecil.",
             "payload": { "xp": 25, "gold": 20 },
             "choices": [
-                { "label": "Tinggalkan gua dengan kemenangan", "next": "ending_win", "is_auto": true }
+                { "label": "Tinggalkan gua dengan kemenangan", "next": "ending_win" }
             ]
         },
         {

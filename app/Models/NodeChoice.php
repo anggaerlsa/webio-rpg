@@ -15,7 +15,6 @@ class NodeChoice extends Model
             'requirements' => 'array',
             'effects' => 'array',
             'order' => 'integer',
-            'is_auto' => 'boolean',
         ];
     }
 

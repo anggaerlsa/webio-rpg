@@ -25,7 +25,7 @@
             "title": "Menara Timur",
             "body": "Tangga menara berderit. Di puncak, seorang penjaga muda tertidur. Kau membangunkannya pelan dan melanjutkan ronda — krisis kecil teratasi.",
             "choices": [
-                { "label": "Selesaikan patroli", "next": "ending_win", "is_auto": true }
+                { "label": "Selesaikan patroli", "next": "ending_win" }
             ]
         },
         {
@@ -35,7 +35,7 @@
             "body": "Kau temukan sekantung kecil yang dijatuhkan seorang pedagang — kau titipkan ke pos jaga, dan mereka memberimu upah kecil atas kejujuranmu.",
             "payload": { "xp": 10, "gold": 10 },
             "choices": [
-                { "label": "Selesaikan patroli", "next": "ending_win", "is_auto": true }
+                { "label": "Selesaikan patroli", "next": "ending_win" }
             ]
         },
         {
