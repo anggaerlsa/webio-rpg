@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Events\FriendshipChanged;
 use App\Models\Friendship;
 use App\Models\User;
+use App\Services\Concerns\BroadcastsQuietly;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class FriendService
 {
+    use BroadcastsQuietly;
+
     /** Pertemanan antara dua user (arah mana pun), atau null. */
     public function between(User $a, User $b): ?Friendship
     {
@@ -84,7 +87,7 @@ class FriendService
         $f = Friendship::create([
             'requester_id' => $me->id, 'addressee_id' => $target->id, 'status' => 'pending',
         ]);
-        event(new FriendshipChanged($target->id, 'request'));
+        $this->broadcastQuietly(new FriendshipChanged($target->id, 'request'));
 
         return $f;
     }
@@ -94,7 +97,7 @@ class FriendService
     {
         abort_unless((int) $f->addressee_id === (int) $me->id && $f->status === 'pending', 403, 'Tidak bisa menerima permintaan ini.');
         $f->update(['status' => 'accepted']);
-        event(new FriendshipChanged($f->requester_id, 'accepted'));
+        $this->broadcastQuietly(new FriendshipChanged($f->requester_id, 'accepted'));
     }
 
     /** Tolak/batalkan/hapus pertemanan (siapa pun yang terlibat). DM ikut terhapus (cascade). */
@@ -104,7 +107,7 @@ class FriendService
         $other = $f->other($me);
         $f->delete();
         if ($other) {
-            event(new FriendshipChanged($other->id, 'removed'));
+            $this->broadcastQuietly(new FriendshipChanged($other->id, 'removed'));
         }
     }
 

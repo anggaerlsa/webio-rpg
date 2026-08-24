@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Events\FriendshipChanged;
 use App\Events\PrivateMessageSent;
 use App\Events\WorldMessageSent;
 use App\Models\ChatMessage;
@@ -166,5 +167,70 @@ class FriendChatTest extends TestCase
 
         $this->assertDatabaseMissing('friendships', ['id' => $f->id]);
         $this->assertDatabaseMissing('chat_messages', ['friendship_id' => $f->id]);
+    }
+
+    // ── Reverb mati tidak boleh menggagalkan aksi ───────────────────────────
+
+    /** Paksa dispatch event gagal, seperti saat server Reverb tidak berjalan. */
+    private function breakBroadcasting(string $event): void
+    {
+        Event::listen($event, function () {
+            throw new \RuntimeException('Reverb mati');
+        });
+    }
+
+    public function test_world_message_is_saved_even_when_broadcasting_fails(): void
+    {
+        $a = $this->player('Aria');
+        $this->breakBroadcasting(WorldMessageSent::class);
+
+        $message = app(ChatService::class)->postWorld($a, 'Halo dunia');
+
+        $this->assertDatabaseHas('chat_messages', ['id' => $message->id, 'body' => 'Halo dunia']);
+    }
+
+    public function test_posting_to_world_chat_returns_ok_when_broadcasting_fails(): void
+    {
+        $a = $this->player('Aria');
+        $this->breakBroadcasting(WorldMessageSent::class);
+
+        $this->actingAs($a)->postJson(route('chat.world.post'), ['body' => 'Halo dunia'])
+            ->assertOk()->assertJsonPath('message.body', 'Halo dunia');
+    }
+
+    public function test_dm_is_saved_even_when_broadcasting_fails(): void
+    {
+        $a = $this->player('Aria');
+        $b = $this->player('Borin');
+        $f = Friendship::create(['requester_id' => $a->id, 'addressee_id' => $b->id, 'status' => 'accepted']);
+        $this->breakBroadcasting(PrivateMessageSent::class);
+
+        $message = app(ChatService::class)->postDm($a, $f, 'rahasia');
+
+        $this->assertDatabaseHas('chat_messages', ['id' => $message->id, 'body' => 'rahasia']);
+    }
+
+    public function test_friend_request_still_lands_when_broadcasting_fails(): void
+    {
+        $a = $this->player('Aria');
+        $b = $this->player('Borin');
+        $this->breakBroadcasting(FriendshipChanged::class);
+
+        $f = $this->friends()->sendRequest($a, $b);
+
+        $this->assertDatabaseHas('friendships', ['id' => $f->id, 'status' => 'pending']);
+        $this->assertSame('outgoing', $this->friends()->status($a, $b)['status']);
+    }
+
+    public function test_accepting_a_friend_request_survives_a_dead_broadcaster(): void
+    {
+        $a = $this->player('Aria');
+        $b = $this->player('Borin');
+        $f = $this->friends()->sendRequest($a, $b);
+        $this->breakBroadcasting(FriendshipChanged::class);
+
+        $this->friends()->accept($b, $f->fresh());
+
+        $this->assertSame('friends', $this->friends()->status($a, $b)['status']);
     }
 }

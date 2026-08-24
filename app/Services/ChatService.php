@@ -7,6 +7,7 @@ use App\Events\WorldMessageSent;
 use App\Models\ChatMessage;
 use App\Models\Friendship;
 use App\Models\User;
+use App\Services\Concerns\BroadcastsQuietly;
 use Illuminate\Support\Collection;
 
 /**
@@ -16,6 +17,8 @@ use Illuminate\Support\Collection;
  */
 class ChatService
 {
+    use BroadcastsQuietly;
+
     public const TTL_MINUTES = 30;
 
     /** Hapus semua pesan yang lebih tua dari TTL. */
@@ -40,7 +43,7 @@ class ChatService
     public function postWorld(User $user, string $body): ChatMessage
     {
         $message = ChatMessage::create(['user_id' => $user->id, 'scope' => 'world', 'body' => $body]);
-        event(new WorldMessageSent($message, $user->displayName()));
+        $this->broadcastQuietly(new WorldMessageSent($message, $user->displayName()));
 
         return $message;
     }
@@ -65,7 +68,7 @@ class ChatService
         $message = ChatMessage::create([
             'user_id' => $user->id, 'scope' => 'dm', 'friendship_id' => $friendship->id, 'body' => $body,
         ]);
-        event(new PrivateMessageSent($message, $user->displayName()));
+        $this->broadcastQuietly(new PrivateMessageSent($message, $user->displayName()));
 
         return $message;
     }

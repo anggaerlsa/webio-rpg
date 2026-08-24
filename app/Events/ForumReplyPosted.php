@@ -5,7 +5,7 @@ namespace App\Events;
 use App\Models\ForumTopic;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 
 /**
@@ -13,10 +13,10 @@ use Illuminate\Foundation\Events\Dispatchable;
  * yang dikutip) agar lencana Balai Warta di sidebar bertambah tanpa polling.
  * Isi topik sendiri TIDAK disiarkan — forum dibaca lewat HTTP biasa.
  *
- * Disiarkan lewat QUEUE (ShouldBroadcast, bukan ...Now): notifikasi ini sekadar
- * pemanis, jadi Reverb yang mati tidak boleh menggagalkan penulisan balasan.
+ * Disiarkan langsung; kegagalannya ditelan `BroadcastsQuietly` — sama seperti
+ * chat & pertemanan, jadi Reverb yang mati tidak menggagalkan penulisan balasan.
  */
-class ForumReplyPosted implements ShouldBroadcast
+class ForumReplyPosted implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets;
 

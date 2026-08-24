@@ -9,6 +9,7 @@ use App\Models\ForumPost;
 use App\Models\ForumTopic;
 use App\Models\ForumVote;
 use App\Models\User;
+use App\Services\Concerns\BroadcastsQuietly;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -24,6 +25,8 @@ use Illuminate\Support\Str;
  */
 class ForumService
 {
+    use BroadcastsQuietly;
+
     /** Jendela waktu penulis boleh mengubah pesannya sendiri. */
     public const EDIT_WINDOW_MINUTES = 15;
 
@@ -234,14 +237,8 @@ class ForumService
         $recipients = collect([$topic->user_id, $quoted?->user_id])
             ->filter()->unique()->reject(fn ($id) => (int) $id === (int) $user->id);
 
-        // Notifikasi tidak kritis — kegagalan siaran tidak boleh menghapus balasan
-        // yang sudah tersimpan.
-        try {
-            foreach ($recipients as $userId) {
-                event(new ForumReplyPosted((int) $userId, $topic, $user->displayName()));
-            }
-        } catch (\Throwable) {
-            // diabaikan dengan sengaja
+        foreach ($recipients as $userId) {
+            $this->broadcastQuietly(new ForumReplyPosted((int) $userId, $topic, $user->displayName()));
         }
 
         return $post;
