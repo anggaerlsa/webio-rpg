@@ -4,7 +4,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { Castle, Compass, Crown, LayoutGrid, Map, ScrollText, UserRound } from 'lucide-vue-next';
+import { Castle, Compass, Crown, Landmark, LayoutGrid, Map, ScrollText, UserRound } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -22,6 +22,7 @@ const mainNavItems = computed<NavItem[]>(() => {
         { title: 'Peta', href: '/peta', icon: Compass },
         { title: 'Kota', href: '/town', icon: Castle },
         { title: 'Misi', href: '/quests', icon: Map },
+        { title: 'Kuil', href: '/kuil', icon: Landmark },
         { title: 'Balai Warta', href: '/forum', icon: ScrollText, badge: forumUnread.value },
         { title: 'Karakter', href: '/character', icon: UserRound },
     ];

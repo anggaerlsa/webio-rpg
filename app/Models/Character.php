@@ -56,6 +56,8 @@ class Character extends Model
             'attributes' => 'array',
             'is_alive' => 'boolean',
             'birth_date' => 'date',
+            'blessing_until' => 'datetime',
+            'last_prayed_at' => 'datetime',
         ];
     }
 

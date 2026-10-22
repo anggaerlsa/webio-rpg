@@ -55,6 +55,7 @@ export interface CharacterState {
     age: number | null;
     affiliation: string | null;
     rank: string | null;
+    blessing: { deity: string | null; until: string } | null;
     rank_progress: number;
     job: string | null;
     level: number;

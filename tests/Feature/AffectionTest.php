@@ -4,12 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\Character;
 use App\Models\Country;
+use App\Models\Deity;
 use App\Models\Item;
 use App\Models\Npc;
 use App\Models\Place;
 use App\Models\Quest;
 use App\Models\User;
 use App\Services\AffectionService;
+use App\Services\BlessingService;
 use App\Services\RankService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -239,5 +241,44 @@ class AffectionTest extends TestCase
         Lottery::alwaysWin();
         $this->actingAs($this->user)->get(route('town.place', $guild))->assertOk();
         Lottery::determineResultNormally();
+    }
+
+    private function blessByAurelia(string $heroGender): void
+    {
+        $this->char->update(['gender' => $heroGender]);
+        $aurelia = Deity::create(['slug' => 'aurelia', 'name' => 'Aurelia', 'title' => 'Dewi Cinta Kasih', 'blessing' => 'affection_opposite']);
+        app(BlessingService::class)->pray($this->char->fresh(), $aurelia);
+    }
+
+    public function test_aurelias_blessing_doubles_gains_with_the_opposite_sex_but_not_losses(): void
+    {
+        $this->blessByAurelia('female'); // Garrick pria
+
+        $this->talk(1)->assertJson(['delta' => 6]); // (+1 obrolan pertama, +2 disukai) × 2
+        $this->talk(2)->assertJson(['delta' => -2]); // penurunan tak berlipat
+        $this->assertSame(4, $this->affection());
+    }
+
+    public function test_aurelias_blessing_raises_the_daily_cap_to_ten(): void
+    {
+        $choice = fn (int $i) => ['label' => "P{$i}", 'reply' => "J{$i}", 'affection' => 2, 'min_level' => null];
+        $this->garrick->update(['choices' => [$choice(0), $choice(1), $choice(2), $choice(3)]]);
+        $this->blessByAurelia('female');
+
+        $this->talk(0)->assertJson(['delta' => 6]);
+        $this->talk(1)->assertJson(['delta' => 4]); // total 10
+        $this->talk(2)->assertJson(['delta' => 0]);
+    }
+
+    public function test_the_blessing_does_nothing_for_the_same_sex_or_after_an_hour(): void
+    {
+        $this->blessByAurelia('male'); // Garrick juga pria
+        $this->talk(1)->assertJson(['delta' => 3]);
+
+        $this->char->update(['gender' => 'female']);
+        $this->travel(61)->minutes();
+        $this->talk(0)->assertJson(['delta' => 0]); // hari sama: bonus obrolan pertama sudah terpakai, berkah habis
+        $this->travel(1)->days();
+        $this->talk(1)->assertJson(['delta' => 3]);
     }
 }

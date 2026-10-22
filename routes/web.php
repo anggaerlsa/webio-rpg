@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\CityController as AdminCityController;
 use App\Http\Controllers\Admin\CountryController as AdminCountryController;
+use App\Http\Controllers\Admin\DeityController as AdminDeityController;
 use App\Http\Controllers\Admin\ForumCategoryController as AdminForumCategoryController;
 use App\Http\Controllers\Admin\ItemController as AdminItemController;
 use App\Http\Controllers\Admin\MonsterController as AdminMonsterController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\ForumController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\QuestController;
+use App\Http\Controllers\TempleController;
 use App\Http\Controllers\TownController;
 use App\Models\Character;
 use App\Models\City;
@@ -64,6 +66,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('town/{place:slug}/sell', [TownController::class, 'sell'])->name('town.sell');
     Route::post('town/{place:slug}/accept-mission', [TownController::class, 'acceptMission'])->name('town.mission.accept');
     Route::post('town/{place:slug}/npc/{npc:slug}/talk', [TownController::class, 'talk'])->name('town.npc.talk');
+
+    // Kuil — daftar dewa-dewi & berdoa meminta berkah (sekali per 24 jam).
+    Route::get('kuil', [TempleController::class, 'index'])->name('temple.index');
+    Route::post('kuil/{deity:slug}/berdoa', [TempleController::class, 'pray'])->name('temple.pray');
 
     // Peta dunia — benua → kerajaan → kota; pindah kota lewat peta.
     Route::get('peta', [MapController::class, 'index'])->name('map.index');
@@ -119,6 +125,7 @@ Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->grou
     Route::resource('skills', AdminSkillController::class)->except(['show']);
     Route::resource('spells', AdminSpellController::class)->except(['show']);
     Route::resource('monsters', AdminMonsterController::class)->except(['show']);
+    Route::resource('deities', AdminDeityController::class)->except(['show']);
     Route::resource('quests', AdminQuestController::class)->except(['show']);
     Route::resource('quests.nodes', AdminQuestNodeController::class)->except(['show', 'index']);
 

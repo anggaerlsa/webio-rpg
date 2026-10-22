@@ -164,6 +164,8 @@ class AffectionService
         }
 
         $bond = $this->bond($character, $npc);
+        // Berkah Aurelia: kenaikan dengan NPC lawan jenis ×2 dan batas naik harian ikut ×2.
+        $boost = $this->blessedByLove($character, $npc) ? 2 : 1;
         $delta = 0;
         foreach ($effects as $key => $effect) {
             if (in_array($key, $bond->used_today, true)) {
@@ -171,7 +173,7 @@ class AffectionService
             }
             $bond->used_today[] = $key;
             if ($effect > 0) {
-                $effect = min($effect, self::DAILY_CAP - $bond->gained_today);
+                $effect = min($effect * $boost, self::DAILY_CAP * $boost - $bond->gained_today);
                 $bond->gained_today += $effect;
             } elseif ($effect < 0) {
                 $effect = -min(-$effect, self::DAILY_CAP - $bond->lost_today);
@@ -183,6 +185,13 @@ class AffectionService
         $this->save($bond);
 
         return ['reply' => $reply, 'delta' => $delta];
+    }
+
+    /** Berkah afeksi lawan jenis sedang aktif dan NPC ini lawan jenis pemain? */
+    private function blessedByLove(Character $character, Npc $npc): bool
+    {
+        return app(BlessingService::class)->active($character) === 'affection_opposite'
+            && $character->gender && $npc->gender && $character->gender !== $npc->gender;
     }
 
     /** Catatan hubungan hari ini; catatan harian direset saat hari berganti. */

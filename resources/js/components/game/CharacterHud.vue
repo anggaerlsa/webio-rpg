@@ -2,8 +2,14 @@
 import StatBar from '@/components/game/StatBar.vue';
 import type { CharacterState } from '@/types/game';
 import { Coins, Shield, ShieldHalf, Sword, Wand2 } from 'lucide-vue-next';
+import { computed } from 'vue';
 
-defineProps<{ character: CharacterState }>();
+const props = defineProps<{ character: CharacterState }>();
+
+// Sisa menit berkah kuil (dihitung saat render; cukup untuk lencana).
+const blessingMinutes = computed(() =>
+    props.character.blessing ? Math.max(0, Math.ceil((new Date(props.character.blessing.until).getTime() - Date.now()) / 60000)) : 0,
+);
 
 const jobLabels: Record<string, string> = { adventurer: 'Petualang', merchant: 'Pedagang', Commoner: 'Commoner' };
 const classLabels: Record<string, string> = { Warrior: 'Ksatria', Mage: 'Penyihir' };
@@ -16,7 +22,12 @@ const genderLabels: Record<string, string> = { male: 'Pria', female: 'Wanita' };
             <div>
                 <div class="flex items-center gap-2">
                     <span class="font-display text-lg font-bold">{{ character.name }}</span>
-                    <span v-if="character.rank" class="rounded bg-amber-500/15 px-1.5 py-0.5 text-xs font-semibold text-amber-600">Rank {{ character.rank }}</span>
+                    <span v-if="character.rank" class="rounded bg-amber-500/15 px-1.5 py-0.5 text-xs font-semibold text-amber-600"
+                        >Rank {{ character.rank }}</span
+                    >
+                    <span v-if="blessingMinutes > 0" class="rounded bg-pink-500/15 px-1.5 py-0.5 text-xs font-semibold text-pink-600">
+                        💗 Berkah {{ character.blessing?.deity }} · {{ blessingMinutes }} mnt
+                    </span>
                 </div>
                 <div class="text-xs text-muted-foreground">
                     <span v-if="character.job">{{ jobLabels[character.job] ?? character.job }}</span>
@@ -39,11 +50,15 @@ const genderLabels: Record<string, string> = { male: 'Pria', female: 'Wanita' };
                 </span>
                 <span class="flex items-center gap-1" title="Serangan Sihir (termasuk perlengkapan)">
                     <Wand2 class="h-4 w-4 text-indigo-400" />{{ character.effective?.magic_attack ?? character.magic_attack }}
-                    <span v-if="character.equip_bonuses?.magic_attack" class="text-xs text-emerald-600">(+{{ character.equip_bonuses.magic_attack }})</span>
+                    <span v-if="character.equip_bonuses?.magic_attack" class="text-xs text-emerald-600"
+                        >(+{{ character.equip_bonuses.magic_attack }})</span
+                    >
                 </span>
                 <span class="flex items-center gap-1" title="Pertahanan Sihir (termasuk perlengkapan)">
                     <ShieldHalf class="h-4 w-4 text-indigo-400" />{{ character.effective?.magic_defense ?? character.magic_defense }}
-                    <span v-if="character.equip_bonuses?.magic_defense" class="text-xs text-emerald-600">(+{{ character.equip_bonuses.magic_defense }})</span>
+                    <span v-if="character.equip_bonuses?.magic_defense" class="text-xs text-emerald-600"
+                        >(+{{ character.equip_bonuses.magic_defense }})</span
+                    >
                 </span>
                 <span class="flex items-center gap-1" title="Emas"><Coins class="h-4 w-4 text-amber-500" />{{ character.gold }}</span>
             </div>

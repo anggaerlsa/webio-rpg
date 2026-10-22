@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Deity;
 use App\Models\Item;
 use App\Models\Monster;
 use App\Models\NodeChoice;
@@ -11,6 +12,7 @@ use App\Models\Quest;
 use App\Models\QuestNode;
 use App\Models\Skill;
 use App\Models\Spell;
+use App\Models\User;
 use App\Services\QuestTemplate;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -49,6 +51,7 @@ class ImportGameContent extends Command
             $this->importStandaloneMonsters($base.DIRECTORY_SEPARATOR.'monsters');
             $this->importQuests($base.DIRECTORY_SEPARATOR.'quests');
             $this->importNpcs($base.DIRECTORY_SEPARATOR.'npcs');
+            $this->importDeities($base.DIRECTORY_SEPARATOR.'deities');
         });
 
         $this->newLine();
@@ -60,7 +63,8 @@ class ImportGameContent extends Command
             .Skill::count().' skills, '
             .Spell::count().' spells, '
             .Item::count().' items, '
-            .Npc::count().' npcs.');
+            .Npc::count().' npcs, '
+            .Deity::count().' deities.');
 
         return self::SUCCESS;
     }
@@ -106,6 +110,23 @@ class ImportGameContent extends Command
                 'apology_reply' => $data['apology_reply'] ?? null,
                 'refusal_message' => $data['refusal_message'] ?? null,
                 'choices' => $data['choices'] ?? [],
+            ]);
+        }
+    }
+
+    /** Dewa-dewi kuil; dihubungkan ke akun GM lewat email bila akunnya ada. */
+    private function importDeities(string $dir): void
+    {
+        foreach ($this->jsonFiles($dir) as $data) {
+            Deity::updateOrCreate(['slug' => $data['slug']], [
+                'user_id' => isset($data['user_email']) ? User::where('email', $data['user_email'])->value('id') : null,
+                'name' => $data['name'],
+                'title' => $data['title'],
+                'domain' => $data['domain'] ?? null,
+                'description' => $data['description'] ?? null,
+                'image' => $data['image'] ?? null,
+                'blessing' => $data['blessing'] ?? null,
+                'blessing_message' => $data['blessing_message'] ?? null,
             ]);
         }
     }

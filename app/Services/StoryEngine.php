@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Character;
+use App\Models\Deity;
 use App\Models\GameSave;
 use App\Models\Item;
 use App\Models\NodeChoice;
@@ -178,7 +179,7 @@ class StoryEngine
         if ($node->type === 'ending' && ($node->payload['result'] ?? 'victory') !== 'defeat') {
             $quest = $save->quest_id ? Quest::find($save->quest_id) : null;
             if ($quest) {
-                app(\App\Services\RankService::class)->complete($character, $quest);
+                app(RankService::class)->complete($character, $quest);
             }
         }
 
@@ -403,6 +404,10 @@ class StoryEngine
             'age' => $character->birth_date?->age,
             'affiliation' => $character->affiliation,
             'rank' => $character->rank,
+            'blessing' => app(BlessingService::class)->active($character) ? [
+                'deity' => Deity::find($character->blessing_deity_id)?->name,
+                'until' => $character->blessing_until->toIso8601String(),
+            ] : null,
             'rank_progress' => (int) $character->rank_progress,
             'job' => $character->user?->job,
             'level' => $character->level,
