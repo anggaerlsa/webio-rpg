@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { postJson } from '@/lib/gameApi';
 import { router } from '@inertiajs/vue3';
-import { BedDouble, DoorOpen, Lock, MessageCircle, ScrollText, Store } from 'lucide-vue-next';
+import { BedDouble, DoorOpen, HandHeart, Heart, Lock, MessageCircle, ScrollText, Store } from 'lucide-vue-next';
 import { computed, ref, watch, type Component } from 'vue';
 
 export interface NpcChoice {
@@ -10,12 +11,20 @@ export interface NpcChoice {
     level_label: string | null;
 }
 
+export interface Affection {
+    level: string;
+    label: string;
+    value: number;
+}
+
 export interface NpcState {
     slug: string;
     name: string;
     role: string;
     image: string | null;
     greeting: string;
+    affection: Affection;
+    can_apologize: boolean;
     choices: NpcChoice[];
 }
 
@@ -23,7 +32,7 @@ export type SceneAction = 'shop' | 'rest' | 'missions';
 
 const props = defineProps<{
     npcs: NpcState[];
-    place: { name: string; category: string; is_shop: boolean; is_guild: boolean };
+    place: { slug: string; name: string; category: string; is_shop: boolean; is_guild: boolean };
     compact?: boolean;
 }>();
 const emit = defineEmits<{ action: [kind: SceneAction]; talk: [] }>();
@@ -31,7 +40,45 @@ const emit = defineEmits<{ action: [kind: SceneAction]; talk: [] }>();
 const current = ref(0);
 const npc = computed(() => props.npcs[current.value]);
 const text = ref(npc.value.greeting);
-watch(npc, (n) => (text.value = n.greeting));
+watch(
+    () => npc.value.slug,
+    () => (text.value = npc.value.greeting),
+);
+
+// Afeksi terbaru dari server (props ikut diperbarui saat level berubah).
+const affection = ref<Affection>(npc.value.affection);
+watch(npc, (n) => (affection.value = n.affection));
+const hostile = computed(() => ['disliked', 'hated'].includes(affection.value.level));
+const barWidth = computed(() => `${(affection.value.value + 100) / 2}%`);
+
+const busy = ref(false);
+const delta = ref<number | null>(null);
+let deltaTimer: ReturnType<typeof setTimeout> | undefined;
+
+async function talk(choice: number | 'apology') {
+    if (busy.value) return;
+    busy.value = true;
+    try {
+        const res = await postJson<{ reply: string; delta: number; affection: Affection }>(
+            route('town.npc.talk', [props.place.slug, npc.value.slug]),
+            { choice },
+        );
+        text.value = res.reply;
+        if (res.delta !== 0) {
+            delta.value = res.delta;
+            clearTimeout(deltaTimer);
+            deltaTimer = setTimeout(() => (delta.value = null), 1800);
+        }
+        const levelChanged = res.affection.level !== affection.value.level;
+        affection.value = res.affection;
+        // Level berubah = sapaan, pilihan yang terbuka, dan harga ikut berubah.
+        if (levelChanged) router.reload({ only: ['npcs', 'price_modifier', 'stock', 'rest_cost'] });
+    } catch (e) {
+        text.value = (e as Error).message;
+    } finally {
+        busy.value = false;
+    }
+}
 
 // Aksi fungsi tempat muncul otomatis menurut kategori, jadi tak bisa hilang karena admin lupa.
 const actions = computed(() => {
@@ -64,7 +111,7 @@ const backdrop = computed(() => BACKDROPS[props.place.category] ?? BACKDROPS.cit
         </div>
         <div class="min-w-0 flex-1">
             <div class="truncate font-display font-bold leading-tight">{{ npc.name }}</div>
-            <div class="truncate text-xs text-white/70">{{ place.name }}</div>
+            <div class="truncate text-xs text-white/70">{{ place.name }} · {{ affection.label }}</div>
         </div>
         <button
             type="button"
@@ -103,9 +150,30 @@ const backdrop = computed(() => BACKDROPS[props.place.category] ?? BACKDROPS.cit
         <!-- Kotak dialog menimpa bagian bawah adegan. -->
         <div class="absolute inset-x-0 bottom-0 z-10 p-2 sm:p-3">
             <div class="rounded-xl border border-white/15 bg-black/75 p-3 shadow-2xl backdrop-blur-sm sm:p-4">
-                <div class="flex items-baseline gap-2">
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span class="font-display text-lg font-bold text-amber-200">{{ npc.name }}</span>
                     <span class="text-xs uppercase tracking-wide text-white/60">{{ npc.role }}</span>
+                    <span class="ml-auto inline-flex items-center gap-1.5 text-xs" :title="`Afeksi ${affection.value}`">
+                        <Heart class="h-3.5 w-3.5" :class="hostile ? 'text-red-400' : 'fill-pink-400 text-pink-400'" />
+                        <span :class="hostile ? 'text-red-300' : 'text-pink-200'">{{ affection.label }}</span>
+                        <span class="relative h-1.5 w-16 overflow-hidden rounded-full bg-white/15">
+                            <span
+                                class="absolute inset-y-0 left-0 rounded-full"
+                                :class="hostile ? 'bg-red-400' : 'bg-pink-400'"
+                                :style="{ width: barWidth }"
+                            />
+                        </span>
+                        <Transition
+                            enter-from-class="opacity-0 -translate-y-1"
+                            leave-to-class="opacity-0"
+                            enter-active-class="transition"
+                            leave-active-class="transition duration-500"
+                        >
+                            <span v-if="delta" class="font-bold" :class="delta > 0 ? 'text-pink-300' : 'text-red-400'">{{
+                                delta > 0 ? `+${delta} ♥` : delta
+                            }}</span>
+                        </Transition>
+                    </span>
                 </div>
                 <p class="mt-1 font-serif text-[15px] leading-snug sm:text-base sm:leading-relaxed" aria-live="polite">“{{ text }}”</p>
 
@@ -130,12 +198,21 @@ const backdrop = computed(() => BACKDROPS[props.place.category] ?? BACKDROPS.cit
                 </div>
                 <div class="mt-2 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto pr-1 sm:max-h-28">
                     <button
-                        v-for="c in npc.choices"
+                        v-if="npc.can_apologize"
+                        type="button"
+                        :disabled="busy"
+                        class="inline-flex items-center gap-1.5 rounded-full border border-pink-300/50 bg-pink-400/15 px-3 py-1 text-[13px] text-pink-100 transition hover:bg-pink-400/25"
+                        @click="talk('apology')"
+                    >
+                        <HandHeart class="h-3.5 w-3.5" /> Minta maaf
+                    </button>
+                    <button
+                        v-for="(c, i) in npc.choices"
                         :key="c.label"
                         type="button"
-                        :disabled="c.locked"
+                        :disabled="c.locked || busy"
                         class="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-left text-[13px] transition enabled:hover:border-amber-200/60 enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                        @click="text = c.reply ?? text"
+                        @click="talk(i)"
                     >
                         <template v-if="c.locked"><Lock class="h-3 w-3 shrink-0" /> {{ c.level_label }} ·</template>
                         {{ c.label }}

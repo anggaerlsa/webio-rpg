@@ -159,6 +159,8 @@ class RankService
             }
 
             $character->save();
+            // Misi selesai mengangkat nama pemain di kerajaan tempatnya berada (= afeksi umum ke semua NPC di sana).
+            app(AffectionService::class)->addReputation($character, AffectionService::REPUTATION_PER_MISSION);
 
             return ['recorded' => true, 'rank_up' => $rankUp, 'new_rank' => $rankUp ? $character->rank : null];
         });

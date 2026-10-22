@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\DB;
  */
 class TownService
 {
+    public function __construct(private AffectionService $affection) {}
+
     /** Biaya istirahat di penginapan per level karakter (tunable). */
     private const REST_COST_PER_LEVEL = 10;
 
@@ -37,10 +39,18 @@ class TownService
         'market' => ['consumable', 'misc', 'weapon', 'armor', 'accessory', 'book'],
     ];
 
-    /** Biaya untuk istirahat penuh di penginapan (skala level). */
-    public function restCost(Character $character): int
+    /** Biaya untuk istirahat penuh di penginapan (skala level, disesuaikan sikap pemilik penginapan). */
+    public function restCost(Character $character, ?Place $place = null): int
     {
-        return self::REST_COST_PER_LEVEL * max(1, (int) $character->level);
+        $base = self::REST_COST_PER_LEVEL * max(1, (int) $character->level);
+
+        return $place ? $this->affection->adjust($base, $this->affection->priceModifier($character, $place)) : $base;
+    }
+
+    /** Harga beli sebuah item di toko ini untuk pemain ini (disesuaikan sikap pemilik toko). */
+    public function buyPrice(Character $character, Place $place, Item $item): int
+    {
+        return $this->affection->adjust((int) $item->value, $this->affection->priceModifier($character, $place));
     }
 
     /** Biaya pindah: gratis dalam satu kerajaan, bayar per level ke kerajaan lain. */
@@ -90,7 +100,7 @@ class TownService
         abort_unless($place->category === 'inn', 422, 'Tempat ini bukan penginapan.');
         abort_if($this->isFullyRested($character), 422, 'HP, SP, dan MP-mu sudah penuh.');
 
-        $cost = $this->restCost($character);
+        $cost = $this->restCost($character, $place);
         abort_if($character->gold < $cost, 422, "Emasmu tidak cukup untuk istirahat (butuh {$cost} emas).");
 
         return DB::transaction(function () use ($character, $cost) {
@@ -162,7 +172,7 @@ class TownService
         abort_unless($this->sells($place, $item), 422, "{$item->name} tidak dijual di sini.");
         abort_if($qty < 1, 422, 'Jumlah tidak valid.');
 
-        $total = (int) $item->value * $qty;
+        $total = $this->buyPrice($character, $place, $item) * $qty;
         abort_if($character->gold < $total, 422, "Emasmu tidak cukup (butuh {$total} emas).");
 
         return DB::transaction(function () use ($character, $item, $qty, $total) {

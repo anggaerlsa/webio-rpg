@@ -8,9 +8,11 @@ use App\Models\Item;
 use App\Models\Npc;
 use App\Models\Place;
 use App\Models\Quest;
+use App\Services\AffectionService;
 use App\Services\RankService;
 use App\Services\StoryEngine;
 use App\Services\TownService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,6 +30,7 @@ class TownController extends Controller
         private StoryEngine $story,
         private TownService $town,
         private RankService $ranks,
+        private AffectionService $affection,
     ) {}
 
     /** Halaman kota: kota asal karakter + daftar Tempat di dalamnya. */
@@ -59,20 +62,25 @@ class TownController extends Controller
         }
         $this->authorizePlace($character, $place);
 
+        if ($refusal = $this->affection->refusal($character, $place)) {
+            return redirect()->route('town.show')->with('error', $refusal);
+        }
+
         $data = [
             'character' => $this->story->characterState($character),
             'place' => $this->placePayload($place->loadMissing('city')),
-            // ponytail: semua pemain dianggap 'stranger' sampai afeksi dibangun (tahap 3).
-            'npcs' => $place->npcs->map(fn (Npc $n) => $this->npcPayload($n, 'stranger'))->all(),
+            'npcs' => $place->npcs->map(fn (Npc $n) => $this->npcPayload($n, $character))->all(),
+            'price_modifier' => $this->affection->priceModifier($character, $place),
         ];
 
         if ($place->category === 'inn') {
-            $data['rest_cost'] = $this->town->restCost($character);
+            $data['rest_cost'] = $this->town->restCost($character, $place);
             $data['is_fully_rested'] = $this->town->isFullyRested($character);
         }
 
         if ($this->town->isShop($place)) {
-            $data['stock'] = $this->town->stock($place)->map(fn (Item $i) => $this->itemPayload($i))->all();
+            $data['stock'] = $this->town->stock($place)
+                ->map(fn (Item $i) => $this->itemPayload($i) + ['price' => $this->town->buyPrice($character, $place, $i)])->all();
             $data['sellable'] = $character->items
                 ->filter(fn (Item $i) => $this->town->sells($place, $i))
                 ->map(fn (Item $i) => array_merge($this->itemPayload($i), [
@@ -131,6 +139,23 @@ class TownController extends Controller
 
         return redirect()->route('quests.play', $quest->slug)
             ->with('success', "Kamu mengambil misi \"{$quest->title}\". Selamat berjuang!");
+    }
+
+    /** Pemain memilih pilihan dialog NPC (atau "Minta maaf"). JSON untuk adegan. */
+    public function talk(Request $request, Place $place, Npc $npc): JsonResponse
+    {
+        $character = $request->user()->character;
+        abort_unless($character, 403);
+        $this->authorizePlace($character, $place);
+        abort_unless((int) $npc->place_id === (int) $place->id, 404);
+        $data = $request->validate(['choice' => ['required']]);
+
+        $result = $this->affection->talk($character, $npc, $data['choice']);
+        $level = $this->affection->level($character, $npc);
+
+        return response()->json($result + [
+            'affection' => ['level' => $level, 'label' => Npc::LEVELS[$level]['label'], 'value' => $this->affection->effective($character, $npc)],
+        ]);
     }
 
     /** Istirahat di penginapan. */
@@ -257,15 +282,21 @@ class TownController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function npcPayload(Npc $npc, string $level): array
+    private function npcPayload(Npc $npc, Character $character): array
     {
+        $level = $this->affection->level($character, $npc);
+        $hostile = in_array($level, ['disliked', 'hated'], true);
+
         return [
             'slug' => $npc->slug,
             'name' => $npc->name,
             'role' => $npc->role,
             'image' => $npc->image,
-            'greeting' => $npc->greeting,
-            'choices' => collect($npc->choices ?? [])->map(function (array $c) use ($level) {
+            'greeting' => $this->affection->greeting($npc, $level),
+            'affection' => ['level' => $level, 'label' => Npc::LEVELS[$level]['label'], 'value' => $this->affection->effective($character, $npc)],
+            'can_apologize' => $level === 'disliked',
+            // NPC yang ketus/membenci tak mau mengobrol: pilihan obrolan disembunyikan.
+            'choices' => $hostile ? [] : collect($npc->choices ?? [])->map(function (array $c) use ($level) {
                 $locked = ! Npc::reaches($level, $c['min_level'] ?? null);
 
                 return [

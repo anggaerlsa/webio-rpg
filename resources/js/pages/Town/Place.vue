@@ -45,6 +45,7 @@ interface ShopItem {
     description: string | null;
     image: string | null;
     value: number;
+    price: number;
     heal: number;
     restore_sp: number;
     restore_mp: number;
@@ -60,6 +61,7 @@ const props = defineProps<{
     character: CharacterState;
     place: PlaceState;
     npcs: NpcState[];
+    price_modifier: number;
     rest_cost?: number;
     is_fully_rested?: boolean;
     stock?: ShopItem[];
@@ -105,6 +107,13 @@ function backToTalk() {
     setLihat(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// Harga menurut sikap pemilik tempat (afeksi): diskon untuk teman, mahal untuk yang tak disukai.
+const priceNote = computed(() =>
+    props.price_modifier < 0
+        ? { text: `Harga ${props.npcs[0]?.affection.label.toLowerCase()} −${-props.price_modifier}%`, class: 'text-emerald-600' }
+        : { text: `Harga dinaikkan +${props.price_modifier}%`, class: 'text-red-500' },
+);
 
 const processing = ref(false);
 function post(url: string, payload: Record<string, unknown> = {}) {
@@ -169,6 +178,7 @@ function acceptMission(slug: string) {
                 <div v-if="place.category === 'inn'" id="panel-rest" class="scroll-mt-4 rounded-xl border bg-card p-5">
                     <div class="flex items-center gap-2 font-semibold"><BedDouble class="h-5 w-5 text-rose-400" /> Istirahat</div>
                     <p class="mt-1 text-sm text-muted-foreground">
+                        <span v-if="price_modifier" class="mr-1 text-xs" :class="priceNote.class">{{ priceNote.text }} ·</span>
                         Beristirahat memulihkan HP, SP, dan MP-mu sepenuhnya dengan biaya
                         <span class="font-medium text-amber-600">{{ rest_cost }} emas</span>.
                     </p>
@@ -185,7 +195,10 @@ function acceptMission(slug: string) {
                 <div v-if="place.is_shop" id="panel-shop" class="scroll-mt-4 space-y-6">
                     <!-- Beli -->
                     <div class="rounded-xl border bg-card p-5">
-                        <h2 class="mb-3 flex items-center gap-2 font-semibold"><Coins class="h-5 w-5 text-amber-500" /> Barang Dagangan</h2>
+                        <h2 class="mb-3 flex items-center gap-2 font-semibold">
+                            <Coins class="h-5 w-5 text-amber-500" /> Barang Dagangan
+                            <span v-if="price_modifier" class="ml-auto text-xs font-normal" :class="priceNote.class">{{ priceNote.text }}</span>
+                        </h2>
                         <div v-if="!stock || !stock.length" class="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
                             Toko ini sedang kosong.
                         </div>
@@ -204,12 +217,12 @@ function acceptMission(slug: string) {
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <div class="text-xs text-amber-600">{{ item.value }} emas</div>
+                                    <div class="text-xs text-amber-600">{{ item.price }} emas</div>
                                     <Button
                                         size="sm"
                                         variant="outline"
                                         class="mt-1"
-                                        :disabled="processing || character.gold < item.value"
+                                        :disabled="processing || character.gold < item.price"
                                         @click="post(route('town.buy', place.slug), { item_id: item.id, qty: 1 })"
                                     >
                                         Beli

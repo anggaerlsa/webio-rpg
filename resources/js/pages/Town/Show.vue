@@ -38,6 +38,7 @@ const props = defineProps<{
 
 const page = usePage();
 const flashSuccess = computed(() => (page.props as Record<string, any>).flash?.success as string | undefined);
+const flashError = computed(() => (page.props as Record<string, any>).flash?.error as string | undefined);
 
 const breadcrumbs: BreadcrumbItem[] = props.city?.country_slug
     ? [
@@ -62,6 +63,9 @@ const breadcrumbs: BreadcrumbItem[] = props.city?.country_slug
             </div>
 
             <template v-else>
+                <div v-if="flashError" class="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-600">
+                    {{ flashError }}
+                </div>
                 <div v-if="flashSuccess" class="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-600">
                     {{ flashSuccess }}
                 </div>

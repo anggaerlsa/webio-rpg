@@ -89,6 +89,8 @@ class TownTest extends TestCase
                 ->where('npcs.0', [
                     'slug' => 'garrick-thorne', 'name' => 'Garrick Thorne', 'role' => 'Pandai Besi',
                     'image' => '/images/npcs/garrick-thorne.webp', 'greeting' => 'Hm. Kau butuh baja?',
+                    'affection' => ['level' => 'stranger', 'label' => 'Asing', 'value' => 0],
+                    'can_apologize' => false,
                     'choices' => [
                         ['label' => 'Kenapa namanya Baja Naga?', 'reply' => 'Kakekku dan naga es.', 'locked' => false, 'level_label' => null],
                         ['label' => 'Kau tinggal sendirian?', 'reply' => null, 'locked' => true, 'level_label' => 'Teman'],

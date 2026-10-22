@@ -63,6 +63,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('town/{place:slug}/buy', [TownController::class, 'buy'])->name('town.buy');
     Route::post('town/{place:slug}/sell', [TownController::class, 'sell'])->name('town.sell');
     Route::post('town/{place:slug}/accept-mission', [TownController::class, 'acceptMission'])->name('town.mission.accept');
+    Route::post('town/{place:slug}/npc/{npc:slug}/talk', [TownController::class, 'talk'])->name('town.npc.talk');
 
     // Peta dunia — benua → kerajaan → kota; pindah kota lewat peta.
     Route::get('peta', [MapController::class, 'index'])->name('map.index');
