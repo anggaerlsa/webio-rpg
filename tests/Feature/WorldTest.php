@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\City;
 use App\Models\Country;
+use App\Models\Place;
 use App\Models\Province;
 use App\Models\User;
 use App\Models\Village;
@@ -159,6 +160,55 @@ class WorldTest extends TestCase
 
         $this->actingAs($admin)->put(route('admin.world.cities.update', $city), $base + ['type' => 'istana-terbang'])
             ->assertSessionHasErrors('type');
+    }
+
+    private function makePlace(): Place
+    {
+        $country = Country::create(['slug' => 'astoria', 'name' => 'Astoria']);
+        $city = $country->provinces()->create(['slug' => 'p', 'name' => 'P'])->cities()->create(['slug' => 'solgrave', 'name' => 'Solgrave']);
+
+        return $city->places()->create(['category' => 'blacksmith', 'slug' => 'tempa', 'name' => 'Tempa Baja Naga']);
+    }
+
+    public function test_superadmin_can_add_and_edit_an_npc_with_dialogue_lines(): void
+    {
+        $admin = $this->superadmin();
+        $place = $this->makePlace();
+        $data = [
+            'slug' => 'garrick-thorne', 'name' => 'Garrick Thorne', 'role' => 'Pandai Besi', 'gender' => 'male',
+            'description' => 'Pendiam dan jujur.', 'image' => '/images/npcs/garrick-thorne.webp',
+            'greeting' => 'Hm. Kau butuh baja?', 'lines' => ['Baris satu.', 'Baris dua.'],
+        ];
+
+        $this->actingAs($admin)->post(route('admin.world.places.npcs.store', $place), $data)
+            ->assertRedirect(route('admin.world.places.npcs.index', $place));
+
+        $npc = $place->npcs()->first();
+        $this->assertSame(['Baris satu.', 'Baris dua.'], $npc->lines);
+
+        $this->actingAs($admin)->put(route('admin.world.npcs.update', $npc), array_merge($data, ['lines' => ['Baris baru.']]))
+            ->assertSessionHasNoErrors();
+        $this->assertSame(['Baris baru.'], $npc->fresh()->lines);
+
+        $this->actingAs($admin)->delete(route('admin.world.npcs.destroy', $npc));
+        $this->assertSame(0, $place->npcs()->count());
+    }
+
+    public function test_npc_gender_and_dialogue_lines_are_validated(): void
+    {
+        $admin = $this->superadmin();
+        $place = $this->makePlace();
+
+        $this->actingAs($admin)->post(route('admin.world.places.npcs.store', $place), [
+            'slug' => 'x', 'name' => 'X', 'role' => 'Y', 'gender' => 'naga', 'greeting' => 'Halo', 'lines' => ['', ['bukan teks']],
+        ])->assertSessionHasErrors(['gender', 'lines.0', 'lines.1']);
+    }
+
+    public function test_players_cannot_manage_npcs(): void
+    {
+        $place = $this->makePlace();
+
+        $this->actingAs(User::factory()->create())->get(route('admin.world.places.npcs.index', $place))->assertForbidden();
     }
 
     public function test_country_slug_must_be_unique_and_well_formed(): void

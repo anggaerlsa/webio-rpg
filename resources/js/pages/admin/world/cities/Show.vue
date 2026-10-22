@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Pencil, Plus, Store, Tent, Trash2 } from 'lucide-vue-next';
+import { Pencil, Plus, Store, Tent, Trash2, Users } from 'lucide-vue-next';
 
 interface Country {
     id: number;
@@ -75,9 +75,13 @@ function hapusDesa(village: Village) {
                     <div>
                         <p class="text-xs uppercase tracking-wide text-muted-foreground">
                             Kota ·
-                            <Link :href="route('admin.world.countries.show', city.province.country.id)" class="hover:underline">{{ city.province.country.name }}</Link>
+                            <Link :href="route('admin.world.countries.show', city.province.country.id)" class="hover:underline">{{
+                                city.province.country.name
+                            }}</Link>
                             /
-                            <Link :href="route('admin.world.provinces.show', city.province.id)" class="hover:underline">{{ city.province.name }}</Link>
+                            <Link :href="route('admin.world.provinces.show', city.province.id)" class="hover:underline">{{
+                                city.province.name
+                            }}</Link>
                         </p>
                         <h1 class="text-2xl font-bold">{{ city.name }}</h1>
                         <p class="mt-1 text-sm text-muted-foreground">{{ city.description || 'Tanpa deskripsi.' }}</p>
@@ -117,6 +121,9 @@ function hapusDesa(village: Village) {
                             <td class="px-4 py-3 text-muted-foreground">{{ place.slug }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end gap-2">
+                                    <Button size="sm" variant="outline" @click="router.visit(route('admin.world.places.npcs.index', place.id))">
+                                        <Users class="mr-1 h-4 w-4" /> NPC
+                                    </Button>
                                     <Button size="sm" variant="outline" @click="router.visit(route('admin.world.places.edit', place.id))">
                                         <Pencil class="h-4 w-4" />
                                     </Button>

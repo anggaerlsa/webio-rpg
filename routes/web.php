@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CountryController as AdminCountryController;
 use App\Http\Controllers\Admin\ForumCategoryController as AdminForumCategoryController;
 use App\Http\Controllers\Admin\ItemController as AdminItemController;
 use App\Http\Controllers\Admin\MonsterController as AdminMonsterController;
+use App\Http\Controllers\Admin\NpcController as AdminNpcController;
 use App\Http\Controllers\Admin\PlaceController as AdminPlaceController;
 use App\Http\Controllers\Admin\PlayerController as AdminPlayerController;
 use App\Http\Controllers\Admin\ProvinceController as AdminProvinceController;
@@ -139,6 +140,7 @@ Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->grou
         Route::resource('provinces.cities', AdminCityController::class)->shallow()->except(['index']);
         Route::resource('cities.villages', AdminVillageController::class)->shallow()->except(['index', 'show']);
         Route::resource('cities.places', AdminPlaceController::class)->shallow()->except(['index', 'show']);
+        Route::resource('places.npcs', AdminNpcController::class)->shallow()->except(['show']);
     });
 });
 

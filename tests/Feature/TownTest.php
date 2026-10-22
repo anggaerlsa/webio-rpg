@@ -66,6 +66,29 @@ class TownTest extends TestCase
                 ->where('city.country_slug', 'eldoria-land'));
     }
 
+    public function test_place_page_sends_only_the_npcs_who_live_there(): void
+    {
+        $city = $this->makeCity();
+        [$user] = $this->playerIn($city);
+        $forge = $city->places()->create(['category' => 'blacksmith', 'slug' => 'forge', 'name' => 'Tempa Baja Naga']);
+        $inn = $city->places()->create(['category' => 'inn', 'slug' => 'inn', 'name' => 'Singa Emas']);
+        $forge->npcs()->create([
+            'slug' => 'garrick-thorne', 'name' => 'Garrick Thorne', 'role' => 'Pandai Besi', 'gender' => 'male',
+            'image' => '/images/npcs/garrick-thorne.webp', 'greeting' => 'Hm. Kau butuh baja?',
+            'lines' => ['Baris satu.', 'Baris dua.'],
+        ]);
+        $inn->npcs()->create(['slug' => 'rosalind-hale', 'name' => 'Rosalind Hale', 'role' => 'Pemilik Penginapan', 'gender' => 'female', 'greeting' => 'Halo.']);
+
+        $this->actingAs($user)->get(route('town.place', $forge))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('npcs', 1)
+                ->where('npcs.0', [
+                    'slug' => 'garrick-thorne', 'name' => 'Garrick Thorne', 'role' => 'Pandai Besi',
+                    'image' => '/images/npcs/garrick-thorne.webp', 'greeting' => 'Hm. Kau butuh baja?',
+                    'lines' => ['Baris satu.', 'Baris dua.'],
+                ]));
+    }
+
     public function test_resting_at_the_inn_restores_pools_and_charges_gold(): void
     {
         $city = $this->makeCity();

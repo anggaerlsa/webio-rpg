@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CharacterHud from '@/components/game/CharacterHud.vue';
+import NpcDialog, { type NpcState } from '@/components/game/NpcDialog.vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { placeMeta } from '@/lib/places';
@@ -58,6 +59,7 @@ interface SellItem extends ShopItem {
 const props = defineProps<{
     character: CharacterState;
     place: PlaceState;
+    npcs: NpcState[];
     rest_cost?: number;
     is_fully_rested?: boolean;
     stock?: ShopItem[];
@@ -130,8 +132,10 @@ function acceptMission(slug: string) {
                         <div class="text-xs uppercase tracking-wide text-muted-foreground">{{ place.category_label }}</div>
                     </div>
                 </div>
-                <p v-if="place.description" class="font-serif mt-3 text-muted-foreground">{{ place.description }}</p>
+                <p v-if="place.description" class="mt-3 font-serif text-muted-foreground">{{ place.description }}</p>
             </div>
+
+            <NpcDialog v-if="npcs.length" :npcs="npcs" />
 
             <CharacterHud :character="character" />
 
@@ -198,7 +202,9 @@ function acceptMission(slug: string) {
                     <div v-else class="space-y-2">
                         <div v-for="item in sellable" :key="item.id" class="flex items-center gap-3 rounded-lg border bg-background p-3">
                             <div class="min-w-0 flex-1">
-                                <div class="truncate text-sm font-medium">{{ item.name }} <span class="text-muted-foreground">×{{ item.quantity }}</span></div>
+                                <div class="truncate text-sm font-medium">
+                                    {{ item.name }} <span class="text-muted-foreground">×{{ item.quantity }}</span>
+                                </div>
                                 <div class="text-xs text-muted-foreground">Harga jual {{ item.sell_price }} emas / unit</div>
                             </div>
                             <Button
@@ -224,9 +230,14 @@ function acceptMission(slug: string) {
                     </div>
                     <template v-if="rank.next && rank.required">
                         <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
-                            <div class="h-full rounded-full bg-amber-500 transition-all" :style="{ width: Math.min(100, (rank.completed / rank.required) * 100) + '%' }" />
+                            <div
+                                class="h-full rounded-full bg-amber-500 transition-all"
+                                :style="{ width: Math.min(100, (rank.completed / rank.required) * 100) + '%' }"
+                            />
                         </div>
-                        <div class="mt-1 text-xs text-muted-foreground">{{ rank.completed }} / {{ rank.required }} misi menuju Rank <b>{{ rank.next }}</b></div>
+                        <div class="mt-1 text-xs text-muted-foreground">
+                            {{ rank.completed }} / {{ rank.required }} misi menuju Rank <b>{{ rank.next }}</b>
+                        </div>
                     </template>
                 </div>
 
@@ -249,18 +260,13 @@ function acceptMission(slug: string) {
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
                                     <div class="font-semibold">{{ m.title }}</div>
-                                    <p v-if="m.description" class="font-serif mt-0.5 text-sm text-muted-foreground">{{ m.description }}</p>
+                                    <p v-if="m.description" class="mt-0.5 font-serif text-sm text-muted-foreground">{{ m.description }}</p>
                                     <div class="mt-1 flex flex-wrap gap-1 text-[11px]">
                                         <span class="rounded bg-muted px-1.5 py-0.5">Level min {{ m.min_level }}</span>
                                         <span class="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-600">Rank {{ m.required_rank }}</span>
                                     </div>
                                 </div>
-                                <Button
-                                    v-if="!m.is_active"
-                                    size="sm"
-                                    :disabled="processing || !!m.block_reason"
-                                    @click="acceptMission(m.slug)"
-                                >
+                                <Button v-if="!m.is_active" size="sm" :disabled="processing || !!m.block_reason" @click="acceptMission(m.slug)">
                                     Ambil
                                 </Button>
                                 <Button v-else size="sm" variant="outline" @click="router.visit(route('quests.play', m.slug))">Lanjutkan</Button>
@@ -271,8 +277,8 @@ function acceptMission(slug: string) {
                 </div>
             </template>
 
-            <!-- CITY HALL / GUILD: info -->
-            <div v-if="isGuildOrHall" class="rounded-xl border bg-card p-5">
+            <!-- CITY HALL / GUILD: info (diganti dialog NPC bila tempat punya penghuni) -->
+            <div v-if="isGuildOrHall && !npcs.length" class="rounded-xl border bg-card p-5">
                 <p class="font-serif text-muted-foreground">
                     <template v-if="place.category === 'city_hall'">
                         Aula kota tempat para birokrat mengatur urusan {{ place.city?.name }}. Layanan resmi akan dibuka seiring berkembangnya dunia.
@@ -280,7 +286,8 @@ function acceptMission(slug: string) {
                     <template v-else>
                         Markas guild. Papan misi dan kenaikan rank akan tersedia di sini setelah sistem rank dibuka.
                         <span v-if="character.affiliation">
-                            Kamu seorang <b class="capitalize">{{ character.affiliation }}</b> dengan Rank <b>{{ character.rank ?? 'F' }}</b>.
+                            Kamu seorang <b class="capitalize">{{ character.affiliation }}</b> dengan Rank <b>{{ character.rank ?? 'F' }}</b
+                            >.
                         </span>
                     </template>
                 </p>

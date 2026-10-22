@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Place extends Model
 {
@@ -30,5 +31,11 @@ class Place extends Model
     public function city(): BelongsTo
     {
         return $this->belongsTo(City::class);
+    }
+
+    /** Penghuni tempat ini (pandai besi, pemilik penginapan, ...). */
+    public function npcs(): HasMany
+    {
+        return $this->hasMany(Npc::class)->orderBy('id');
     }
 }

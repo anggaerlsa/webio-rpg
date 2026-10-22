@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Character;
 use App\Models\City;
 use App\Models\Item;
+use App\Models\Npc;
 use App\Models\Place;
 use App\Models\Quest;
 use App\Services\RankService;
@@ -61,6 +62,14 @@ class TownController extends Controller
         $data = [
             'character' => $this->story->characterState($character),
             'place' => $this->placePayload($place->loadMissing('city')),
+            'npcs' => $place->npcs->map(fn (Npc $n) => [
+                'slug' => $n->slug,
+                'name' => $n->name,
+                'role' => $n->role,
+                'image' => $n->image,
+                'greeting' => $n->greeting,
+                'lines' => $n->lines ?? [],
+            ])->all(),
         ];
 
         if ($place->category === 'inn') {
