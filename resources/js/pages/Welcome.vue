@@ -5,14 +5,6 @@ defineProps<{
     stats: { heroes: number; quests: number; monsters: number; cities: number };
 }>();
 
-// Bintang dibuat sekali dengan posisi acak; cukup untuk suasana, bukan data.
-const stars = Array.from({ length: 70 }, () => ({
-    top: `${Math.random() * 60}%`,
-    left: `${Math.random() * 100}%`,
-    size: Math.random() < 0.15 ? 3 : Math.random() < 0.5 ? 2 : 1,
-    delay: `${(Math.random() * 4).toFixed(2)}s`,
-}));
-
 const classes = [
     {
         name: 'Warrior',
@@ -63,42 +55,21 @@ const journey = [
 
         <!-- Hero -->
         <section class="relative flex min-h-screen items-center justify-center overflow-hidden px-4 text-center">
+            <!-- Gradasi = cadangan kalau gambar gagal dimuat -->
             <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1d2347_0%,#0b0d16_65%)]" />
-            <div class="absolute inset-0" aria-hidden="true">
-                <span
-                    v-for="(s, i) in stars"
-                    :key="i"
-                    class="star absolute rounded-full bg-[#fff6dc]"
-                    :style="{ top: s.top, left: s.left, width: `${s.size}px`, height: `${s.size}px`, animationDelay: s.delay }"
-                />
-            </div>
-            <div class="moon absolute right-[6%] top-[9%] h-10 w-10 rounded-full bg-[#f4ecd2] sm:right-[12%] sm:top-[14%] sm:h-24 sm:w-24" aria-hidden="true" />
-
-            <!-- Siluet kastil di atas bukit -->
-            <svg class="absolute inset-x-0 bottom-0 h-[38%] w-full" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-                <path d="M0 300 Q200 230 400 280 T800 260 T1200 290 V400 H0Z" fill="#141831" />
-                <g fill="#1a1f3d">
-                    <path d="M0 340 Q300 280 600 300 T1200 330 V400 H0Z" />
-                    <rect x="470" y="170" width="260" height="140" />
-                    <rect x="440" y="120" width="50" height="190" />
-                    <rect x="710" y="120" width="50" height="190" />
-                    <rect x="560" y="70" width="80" height="240" />
-                    <path d="M440 120 L465 70 L490 120Z M710 120 L735 70 L760 120Z M560 70 L600 10 L640 70Z" />
-                    <path d="M470 170 h20 v-14 h20 v14 h20 v-14 h20 v14 h20 v-14 h20 v14 h20 v-14 h20 v14 h20 v-14 h20 v14 h20 v-14 h20 v14 h20 v-14 h20 v14Z" />
-                    <path d="M575 310 v-50 a25 25 0 0 1 50 0 v50Z" fill="#05060d" />
-                </g>
-                <g class="window" fill="#f2a541">
-                    <rect x="458" y="150" width="12" height="20" rx="6" />
-                    <rect x="728" y="150" width="12" height="20" rx="6" />
-                    <rect x="592" y="110" width="16" height="26" rx="8" />
-                    <rect x="520" y="210" width="10" height="16" rx="5" />
-                    <rect x="670" y="210" width="10" height="16" rx="5" />
-                </g>
-                <path d="M0 370 Q300 330 600 360 T1200 350 V400 H0Z" fill="#070810" />
-            </svg>
+            <img
+                src="/images/hero.webp"
+                alt=""
+                width="1536"
+                height="1024"
+                fetchpriority="high"
+                class="absolute inset-0 h-full w-full object-cover object-[72%_center]"
+            />
+            <!-- Gelapkan bagian tengah supaya judul tetap terbaca -->
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(11,13,22,0.75)_0%,rgba(11,13,22,0.35)_55%,transparent_80%)]" aria-hidden="true" />
             <div class="fog absolute inset-x-0 bottom-0 h-40" aria-hidden="true" />
 
-            <div class="relative z-10 max-w-3xl pb-44 sm:pb-52">
+            <div class="relative z-10 max-w-3xl pb-24">
                 <p class="mb-4 font-display text-xs uppercase tracking-[0.5em] text-[#e9c46a]/80 sm:text-sm">Sebuah dunia menantimu</p>
                 <h1 class="title-glow font-display text-4xl font-bold leading-tight text-[#f6e7b8] sm:text-6xl md:text-7xl">
                     Kerajaan Memanggil Para Pahlawannya
@@ -226,44 +197,10 @@ const journey = [
 .title-glow {
     text-shadow: 0 0 30px rgba(233, 196, 106, 0.35);
 }
-.moon {
-    box-shadow: 0 0 60px 15px rgba(244, 236, 210, 0.25);
-}
 .fog {
     background: linear-gradient(to top, #0b0d16 15%, transparent);
 }
-.star {
-    animation: twinkle 3.5s ease-in-out infinite;
-}
-.window {
-    animation: flicker 2.8s ease-in-out infinite;
-}
-@keyframes twinkle {
-    0%,
-    100% {
-        opacity: 0.25;
-    }
-    50% {
-        opacity: 1;
-    }
-}
-@keyframes flicker {
-    0%,
-    100% {
-        opacity: 1;
-    }
-    40% {
-        opacity: 0.75;
-    }
-    60% {
-        opacity: 0.9;
-    }
-}
 @media (prefers-reduced-motion: reduce) {
-    .star,
-    .window {
-        animation: none;
-    }
     .card {
         transition: none;
     }
