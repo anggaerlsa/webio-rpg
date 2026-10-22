@@ -1,0 +1,64 @@
+{
+    "place": "serikat-dagang-mahkota",
+    "slug": "isolde-brennar",
+    "name": "Isolde Brennar",
+    "role": "Juru Kontrak Serikat Dagang",
+    "gender": "female",
+    "description": "Wanita ±27 tahun, rambut pirang madu dikepang ke samping, mata hijau, rompi brokat hijau, kacamata baca. Cerdas, cepat menghitung, ramah tapi selalu berbisnis.",
+    "image": "/images/npcs/isolde-brennar.webp",
+    "greeting": "Selamat datang di Serikat Dagang Mahkota. Setiap kesepakatan di Solgrave lewat mejaku, jadi mungkin kita bisa saling untung.",
+    "greeting_cold": "Kontrak denganmu sudah kuberi tanda merah. Bicaralah cepat, waktuku mahal.",
+    "greeting_warm": "Mitra favoritku! Duduklah, aku baru saja menyeduh teh dari Xianzhou. Gratis, khusus untukmu.",
+    "apology_reply": "Baik. Anggap saja utangmu padaku berkurang sedikit. Sedikit.",
+    "refusal_message": null,
+    "choices": [
+        {
+            "label": "Dari mana saja barang di Solgrave?",
+            "reply": "Rempah dari Zirnitra, sutra dari Xianzhou, baja dari kurcaci Nidavellir. Semua jalur dagang bermuara di sini.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Kenapa semua orang percaya serikat?",
+            "reply": "Di Astoria, segel serikat lebih dipercaya daripada janji bangsawan. Tinta tak bisa berbohong.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Aku bisa kerja tanpa bertarung?",
+            "reply": "Tak semua petualang harus bertarung. Misi dagang kami membayar kaki yang cepat dan mulut yang bisa tutup rapat.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Ada kontrak yang perlu diantar?",
+            "reply": "Aku butuh kurir tepercaya untuk mengantar kontrak penting ke kantor seberang pasar. Jangan sampai hilang, isinya mahal.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Kurasa jalur dagang ke Nidavellir bisa dipersingkat lewat pegunungan.",
+            "reply": "Oh? Kau berpikir seperti pedagang. Jalur itu berbahaya, tapi kalau berhasil, keuntungannya dua kali lipat. Aku suka caramu berpikir.",
+            "affection": 2,
+            "min_level": null
+        },
+        {
+            "label": "Ayolah, palsukan saja segel ini sedikit. Siapa yang tahu?",
+            "reply": "Aku yang tahu. Dan sekarang aku juga tahu kau tak bisa dipercaya. Satu kesalahan lagi, dan namamu masuk daftar hitam serikat.",
+            "affection": -2,
+            "min_level": null
+        },
+        {
+            "label": "Kenapa kau selalu memakai kacamata itu?",
+            "reply": "Mataku rusak karena terlalu banyak membaca kontrak di bawah lilin. Ayahku bilang itu harga sebuah ambisi. Aku bilang itu harga yang murah.",
+            "affection": 0,
+            "min_level": "friend"
+        },
+        {
+            "label": "Apa mimpimu, Isolde?",
+            "reply": "Membuka serikat dagangku sendiri, dengan namaku di atas pintunya. Bukan 'Mahkota', bukan nama bangsawan. Hanya Brennar. Suatu hari nanti.",
+            "affection": 2,
+            "min_level": "close"
+        }
+    ]
+}

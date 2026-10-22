@@ -170,38 +170,47 @@ class WorldTest extends TestCase
         return $city->places()->create(['category' => 'blacksmith', 'slug' => 'tempa', 'name' => 'Tempa Baja Naga']);
     }
 
-    public function test_superadmin_can_add_and_edit_an_npc_with_dialogue_lines(): void
+    public function test_superadmin_can_add_and_edit_an_npc_with_dialogue_choices(): void
     {
         $admin = $this->superadmin();
         $place = $this->makePlace();
+        $choice = ['label' => 'Kenapa namanya Baja Naga?', 'reply' => 'Kakekku dan naga es.', 'affection' => 0, 'min_level' => null];
         $data = [
             'slug' => 'garrick-thorne', 'name' => 'Garrick Thorne', 'role' => 'Pandai Besi', 'gender' => 'male',
             'description' => 'Pendiam dan jujur.', 'image' => '/images/npcs/garrick-thorne.webp',
-            'greeting' => 'Hm. Kau butuh baja?', 'lines' => ['Baris satu.', 'Baris dua.'],
+            'greeting' => 'Hm. Kau butuh baja?', 'greeting_cold' => 'Keluar.', 'greeting_warm' => 'Duduk dekat api.',
+            'apology_reply' => 'Baja retak bisa ditempa ulang.', 'refusal_message' => 'Garrick membanting pintu.',
+            'choices' => [$choice],
         ];
 
         $this->actingAs($admin)->post(route('admin.world.places.npcs.store', $place), $data)
             ->assertRedirect(route('admin.world.places.npcs.index', $place));
 
         $npc = $place->npcs()->first();
-        $this->assertSame(['Baris satu.', 'Baris dua.'], $npc->lines);
+        $this->assertSame([$choice], $npc->choices);
+        $this->assertSame('Keluar.', $npc->greeting_cold);
 
-        $this->actingAs($admin)->put(route('admin.world.npcs.update', $npc), array_merge($data, ['lines' => ['Baris baru.']]))
+        $secret = ['label' => 'Kau tinggal sendirian?', 'reply' => 'Rahasia.', 'affection' => 2, 'min_level' => 'friend'];
+        $this->actingAs($admin)->put(route('admin.world.npcs.update', $npc), array_merge($data, ['choices' => [$choice, $secret]]))
             ->assertSessionHasNoErrors();
-        $this->assertSame(['Baris baru.'], $npc->fresh()->lines);
+        $this->assertSame([$choice, $secret], $npc->fresh()->choices);
 
         $this->actingAs($admin)->delete(route('admin.world.npcs.destroy', $npc));
         $this->assertSame(0, $place->npcs()->count());
     }
 
-    public function test_npc_gender_and_dialogue_lines_are_validated(): void
+    public function test_npc_gender_and_dialogue_choices_are_validated(): void
     {
         $admin = $this->superadmin();
         $place = $this->makePlace();
 
         $this->actingAs($admin)->post(route('admin.world.places.npcs.store', $place), [
-            'slug' => 'x', 'name' => 'X', 'role' => 'Y', 'gender' => 'naga', 'greeting' => 'Halo', 'lines' => ['', ['bukan teks']],
-        ])->assertSessionHasErrors(['gender', 'lines.0', 'lines.1']);
+            'slug' => 'x', 'name' => 'X', 'role' => 'Y', 'gender' => 'naga', 'greeting' => 'Halo',
+            'choices' => [
+                ['label' => '', 'reply' => 'Jawab', 'affection' => 0, 'min_level' => null],
+                ['label' => 'Tanya', 'reply' => 'Jawab', 'affection' => 5, 'min_level' => 'pacar'],
+            ],
+        ])->assertSessionHasErrors(['gender', 'choices.0.label', 'choices.1.affection', 'choices.1.min_level']);
     }
 
     public function test_players_cannot_manage_npcs(): void

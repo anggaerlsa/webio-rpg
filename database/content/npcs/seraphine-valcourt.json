@@ -1,0 +1,64 @@
+{
+    "place": "istana-kekaisaran-solgrave",
+    "slug": "seraphine-valcourt",
+    "name": "Seraphine Valcourt",
+    "role": "Kanselir Mahkota",
+    "gender": "female",
+    "description": "Wanita ±40 tahun, tinggi dan anggun, rambut hitam disanggul dengan tusuk emas, gaun biru tua berlambang mahkota. Tenang, tajam, sangat sopan, tak pernah membuang waktu.",
+    "image": "/images/npcs/seraphine-valcourt.webp",
+    "greeting": "Istana menerima setiap warga yang datang dengan niat baik. Sebutkan keperluanmu, Petualang, dan buatlah singkat.",
+    "greeting_cold": "Kau lagi. Aku sedang sibuk, dan kau tidak termasuk dalam jadwalku.",
+    "greeting_warm": "Ah, kau. Duduklah. Untuk kali ini, aku bisa menyisihkan lima menit.",
+    "apology_reply": "Permintaan maaf dicatat. Jangan buat aku menulis catatan kedua.",
+    "refusal_message": null,
+    "choices": [
+        {
+            "label": "Siapa yang memerintah Astoria?",
+            "reply": "Kaisar Edwin Astoria XII memerintah dengan disiplin legiun dan pena birokrasi. Keduanya sama tajamnya.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Ceritakan soal tembok kota.",
+            "reply": "Tembok marmer Solgrave tak pernah jebol sejak tiga abad lalu. Rakyat menyebutnya 'Pelukan Kaisar'.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Bagaimana cara ke kerajaan lain?",
+            "reply": "Peta di luar gerbang akan membawamu ke kerajaan lain. Melintasi perbatasan ada ongkosnya, jadi siapkan emas.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Ada pekerjaan untukku?",
+            "reply": "Penjaga gerbang kekurangan orang belakangan ini. Guild Pedang Fajar sedang mencari relawan untuk patroli tembok malam.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Langsung saja: apa yang paling dibutuhkan istana?",
+            "reply": "Akhirnya, seseorang yang tahu nilai waktu. Istana butuh orang yang menyelesaikan tugas tanpa banyak bicara. Kalau kau orangnya, aku akan mengingat namamu.",
+            "affection": 2,
+            "min_level": null
+        },
+        {
+            "label": "Wah, kau cantik sekali kalau sedang marah.",
+            "reply": "Rayuan tidak tercantum dalam prosedur istana. Pintu keluar ada di belakangmu.",
+            "affection": -2,
+            "min_level": null
+        },
+        {
+            "label": "Kenapa kau begitu keras pada semua orang?",
+            "reply": "Karena istana ini penuh orang yang tersenyum sambil menyembunyikan belati. Kekerasanku adalah perisai, bukan sifat. Jangan sebarkan itu.",
+            "affection": 0,
+            "min_level": "friend"
+        },
+        {
+            "label": "Apa yang sebenarnya kau inginkan, Seraphine?",
+            "reply": "Pensiun ke rumah kecil di tepi danau, dengan seribu buku dan tanpa satu pun surat resmi. Tertawa, dan aku akan mencabut izinmu masuk istana.",
+            "affection": 2,
+            "min_level": "close"
+        }
+    ]
+}

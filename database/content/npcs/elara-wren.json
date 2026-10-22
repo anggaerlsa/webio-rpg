@@ -1,0 +1,64 @@
+{
+    "place": "apotek-sinar-surya",
+    "slug": "elara-wren",
+    "name": "Elara Wren",
+    "role": "Peramu Ramuan",
+    "gender": "female",
+    "description": "Wanita ±24 tahun, rambut merah tembaga bergelombang, bintik di pipi, celemek bersulam daun, botol kecil di sabuk. Ceria, sedikit ceroboh, sangat peduli pada pelanggannya.",
+    "image": "/images/npcs/elara-wren.webp",
+    "greeting": "Oh! Pelanggan! Maaf, baunya agak tajam, tadi ada ramuan yang meledak. Sedikit. Ada yang bisa kubantu?",
+    "greeting_cold": "Oh. Kau. Silakan beli dan... pergi, ya. Aku sedang sibuk mencampur sesuatu.",
+    "greeting_warm": "Kau datang! Aku sudah menyiapkan ramuan baru, dan kali ini, sungguh, tidak akan meledak!",
+    "apology_reply": "Mm... baiklah. Ibuku bilang, hati yang marah itu racun yang paling lambat. Aku tak mau keracunan.",
+    "refusal_message": "Elara membalik papan di pintu menjadi \"Tutup\" dan pura-pura tidak melihatmu.",
+    "choices": [
+        {
+            "label": "Dari mana tanaman obatmu?",
+            "reply": "Separuh tanaman obatku datang dari tepi hutan Alfheim. Para elf tak suka berbagi, jadi harganya mahal.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Ibumu juga peramu?",
+            "reply": "Ibuku peramu istana dulu. Katanya, Kaisar tak pernah sakit karena minum teh sinar surya tiap pagi.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Apa yang perlu kubawa sebelum bertarung?",
+            "reply": "Selalu bawa potion sebelum keluar kota. Di tengah pertarungan, satu botol bisa jadi beda antara pulang dan tidak.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Ada kabar aneh belakangan ini?",
+            "reply": "Gudang logistik guild dipenuhi tikus sebesar anjing! Kalau ada yang bisa mengusirnya, para juru tulis pasti berterima kasih.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Kau baik-baik saja? Ada bekas luka bakar di tanganmu.",
+            "reply": "Oh! Kau memperhatikan? Ini cuma luka kecil dari ramuan api. Tapi... terima kasih sudah bertanya. Jarang ada yang peduli pada si peramu.",
+            "affection": 2,
+            "min_level": null
+        },
+        {
+            "label": "Pantas tokomu bau, peramunya saja ceroboh begitu.",
+            "reply": "Itu... itu jahat sekali. Aku belajar keras untuk ini, tahu! Silakan cari apotek lain.",
+            "affection": -2,
+            "min_level": null
+        },
+        {
+            "label": "Pernah ada ramuan yang benar-benar gagal?",
+            "reply": "Sekali, aku membuat ramuan penumbuh rambut. Kucing tetanggaku meminumnya. Sekarang dia kucing paling berbulu di Solgrave. Dia membenciku.",
+            "affection": 0,
+            "min_level": "friend"
+        },
+        {
+            "label": "Apa yang paling kau takutkan?",
+            "reply": "Tidak bisa menolong seseorang tepat waktu. Seperti ibuku dulu. Itu sebabnya aku selalu menyimpan satu potion terbaik di bawah meja. Untuk keadaan darurat. Untukmu juga, kalau perlu.",
+            "affection": 2,
+            "min_level": "close"
+        }
+    ]
+}

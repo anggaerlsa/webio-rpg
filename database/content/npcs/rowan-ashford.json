@@ -1,0 +1,64 @@
+{
+    "place": "guild-pedang-fajar",
+    "slug": "rowan-ashford",
+    "name": "Rowan Ashford",
+    "role": "Kepala Guild Pedang Fajar",
+    "gender": "male",
+    "description": "Pria ±32 tahun, atletis, rambut cokelat gelap sebahu, bekas luka tipis di alis, jubah merah legiun yang pudar. Mantan perwira legiun, hangat pada pendatang baru, keras soal disiplin.",
+    "image": "/images/npcs/rowan-ashford.webp",
+    "greeting": "Wajah baru? Bagus. Papan misi tak pernah kekurangan pekerjaan, yang kurang justru pedang yang mau bekerja.",
+    "greeting_cold": "Kalau kau datang untuk membuat masalah lagi, pintunya di sana. Kalau mau kerja, ambil misi dan jangan bicara padaku.",
+    "greeting_warm": "Hei, ini dia petualang favoritku! Papan misi menunggumu, tapi duduk dulu, ceritakan perjalananmu.",
+    "apology_reply": "Hm. Di legiun, permintaan maaf dibuktikan di lapangan, bukan di mulut. Tapi baiklah, aku dengar.",
+    "refusal_message": null,
+    "choices": [
+        {
+            "label": "Kau pernah jadi tentara?",
+            "reply": "Aku dulu berbaris bersama Legiun Ketujuh. Sekarang tugasku memastikan kalian pulang hidup-hidup.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Kenapa namanya Pedang Fajar?",
+            "reply": "Guild ini dinamai Pedang Fajar karena petualang terbaik selalu berangkat sebelum matahari terbit.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Bagaimana cara naik rank?",
+            "reply": "Ambil satu misi, tuntaskan, lalu ambil lagi. Cukup banyak misi selesai, dan rank-mu naik dari F sampai S.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Ada misi yang menarik?",
+            "reply": "Ada gua lembap di tepi desa. Katanya menyimpan harta, dan seekor goblin yang tak suka tamu. Sedikit yang kembali.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Beri aku misi paling berbahaya yang kau punya.",
+            "reply": "Ha! Itu semangat yang kusuka. Tapi orang mati tak bisa naik rank. Mulai dari yang kecil, buktikan dirimu, dan suatu hari aku sendiri yang akan memberimu misi itu.",
+            "affection": 2,
+            "min_level": null
+        },
+        {
+            "label": "Legiun cuma kumpulan orang yang takut berpikir sendiri.",
+            "reply": "Hati-hati dengan lidahmu. Orang-orang yang kau hina itu mati supaya kau bisa bicara seenaknya di sini.",
+            "affection": -2,
+            "min_level": null
+        },
+        {
+            "label": "Bekas luka di alismu itu dari mana?",
+            "reply": "Pertempuran di Celah Kabut. Seorang prajurit muda membeku ketakutan, dan aku melangkah di depannya. Ia selamat. Itu satu-satunya medali yang kubanggakan.",
+            "affection": 0,
+            "min_level": "friend"
+        },
+        {
+            "label": "Kenapa kau keluar dari legiun?",
+            "reply": "Aku diperintah membakar sebuah desa yang dituduh berkhianat. Aku menolak. Mereka mencopot pangkatku, tapi desa itu masih berdiri. Aku tak pernah menyesal.",
+            "affection": 2,
+            "min_level": "close"
+        }
+    ]
+}

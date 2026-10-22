@@ -1,0 +1,64 @@
+{
+    "place": "pasar-agung-solgrave",
+    "slug": "tobias-fenwick",
+    "name": "Tobias Fenwick",
+    "role": "Pedagang Pasar",
+    "gender": "male",
+    "description": "Pria ±22 tahun, rambut ikal cokelat kemerahan, senyum lebar, rompi penuh kantong dan syal warna-warni. Lincah, jago merayu pembeli, tahu semua gosip kota.",
+    "image": "/images/npcs/tobias-fenwick.webp",
+    "greeting": "Mampir, mampir! Apa pun yang kau cari, Pasar Agung punya. Kalau tidak ada, aku tahu siapa yang punya!",
+    "greeting_cold": "Oh, kau. Lapakku sedang... penuh. Untuk orang lain.",
+    "greeting_warm": "Sobatku! Aku sudah menyisihkan barang bagus untukmu. Jangan bilang pelanggan lain, ya!",
+    "apology_reply": "Yah, aku tak bisa marah lama-lama. Buruk untuk bisnis. Kita mulai dari awal, oke?",
+    "refusal_message": "Tobias menutup tirai lapaknya begitu melihatmu. \"Tutup! Tutup untukmu!\"",
+    "choices": [
+        {
+            "label": "Pasar ini sudah lama berdiri?",
+            "reply": "Pasar ini lebih tua dari istana. Kata nenekku, Kaisar pertama dulu menawar gandum di lapak ini.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Ada perayaan di kota ini?",
+            "reply": "Saat festival panen, seluruh jalan utama berubah jadi lautan lentera. Kau harus melihatnya sekali seumur hidup.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Kau juga beli barang?",
+            "reply": "Lapakku menjual hampir semua jenis barang, dan aku juga membeli barangmu. Jual yang tak terpakai, tukar dengan yang berguna.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Dengar gosip apa hari ini?",
+            "reply": "Juru tulis serikat sedang cari kurir ke desa seberang bukit. Tak ada monster, cuma jalan panjang. Uang mudah, kalau kakimu kuat.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Syalmu keren. Beli di mana?",
+            "reply": "Kau punya selera! Ini dari pedagang Xianzhou, kutukar dengan tiga karung kentang dan cerita lucu. Transaksi terbaik dalam hidupku.",
+            "affection": 2,
+            "min_level": null
+        },
+        {
+            "label": "Barangmu rongsokan semua, pasti curian.",
+            "reply": "Hei! Semua barangku jujur, dibeli dengan keringat! Kalau mau menghina, pergi saja ke lapak sebelah.",
+            "affection": -2,
+            "min_level": null
+        },
+        {
+            "label": "Kenapa kau jadi pedagang?",
+            "reply": "Ayahku pedagang, kakekku juga. Tapi jujur? Aku suka mendengar cerita orang. Setiap barang yang lewat lapak ini membawa cerita.",
+            "affection": 0,
+            "min_level": "friend"
+        },
+        {
+            "label": "Apa rahasia terbesarmu?",
+            "reply": "Aku... tak bisa membaca. Semua harga kuhafal. Jangan bilang siapa-siapa. Atau, mungkin, kau mau mengajariku suatu hari?",
+            "affection": 2,
+            "min_level": "close"
+        }
+    ]
+}

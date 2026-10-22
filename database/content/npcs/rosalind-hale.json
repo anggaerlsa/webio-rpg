@@ -1,0 +1,64 @@
+{
+    "place": "penginapan-singa-emas",
+    "slug": "rosalind-hale",
+    "name": "Rosalind Hale",
+    "role": "Pemilik Penginapan",
+    "gender": "female",
+    "description": "Wanita ±35 tahun, anggun, rambut cokelat tua digelung longgar, gaun merah anggur, nampan berisi gelas. Hangat, keibuan, tajam mengamati tamu.",
+    "image": "/images/npcs/rosalind-hale.webp",
+    "greeting": "Selamat datang di Singa Emas, Sayang. Duduk dulu, kau kelihatan seperti baru diseret kuda melintasi tiga provinsi.",
+    "greeting_cold": "Kamar penuh. Untukmu, selalu penuh. Kecuali kau mau minta maaf dulu.",
+    "greeting_warm": "Sayangku! Kamar terbaik sudah kusiapkan, lengkap dengan sup hangat. Kau kurus sekali, makan dulu.",
+    "apology_reply": "Hmph. Baiklah, Sayang. Tapi kalau kau membuat ribut lagi, nampan ini yang bicara.",
+    "refusal_message": "Rosalind berdiri di pintu dengan tangan bersedekap. \"Tak ada kamar untuk pembuat onar. Pergi.\"",
+    "choices": [
+        {
+            "label": "Cerita apa di balik singa emas di pintu?",
+            "reply": "Singa emas di atas pintu itu hadiah dari seorang jenderal legiun yang pernah menginap di sini dan tak sanggup membayar.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Siapa saja yang menginap di sini?",
+            "reply": "Para pengelana dari seluruh benua bertukar cerita di meja-meja ini. Kalau kau mau tahu rahasia dunia, cukup dengarkan.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Berapa biaya istirahat?",
+            "reply": "Istirahat semalam memulihkan HP, SP, dan MP-mu sampai penuh. Biayanya sepuluh emas untuk setiap level, cukup murah untuk nyawa.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Dengar kabar apa dari para tamu?",
+            "reply": "Seorang pemburu bercerita soal gua di tepi desa. Ia melihat kilau emas di dalamnya, lalu sepasang mata kuning. Ia tak masuk lagi.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Supmu yang terenak di seluruh Solgrave.",
+            "reply": "Oh, kau bisa saja! Resep nenekku, rahasianya sedikit anggur merah dan banyak kesabaran. Nah, untuk itu, porsimu kutambah.",
+            "affection": 2,
+            "min_level": null
+        },
+        {
+            "label": "Penginapan ini kotor, pelayannya lambat.",
+            "reply": "Kotor? Aku mengepel lantai ini setiap subuh dengan tanganku sendiri! Kalau tak suka, tidur saja di kandang kuda.",
+            "affection": -2,
+            "min_level": null
+        },
+        {
+            "label": "Kau mengurus tempat ini sendirian?",
+            "reply": "Suamiku pergi berlayar ke Zirnitra delapan tahun lalu dan tak pernah kembali. Aku menunggu sambil menjaga lampu di jendela tetap menyala. Bodoh, ya?",
+            "affection": 0,
+            "min_level": "friend"
+        },
+        {
+            "label": "Kenapa kau begitu peduli pada tamu?",
+            "reply": "Karena setiap pengelana yang lewat pintu itu adalah anak seseorang. Aku ingin mereka pulang. Termasuk kau, Sayang. Jadi berhati-hatilah di luar sana.",
+            "affection": 2,
+            "min_level": "close"
+        }
+    ]
+}

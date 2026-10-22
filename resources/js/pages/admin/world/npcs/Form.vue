@@ -19,7 +19,17 @@ interface Npc {
     description: string | null;
     image: string | null;
     greeting: string;
-    lines: string[] | null;
+    greeting_cold: string | null;
+    greeting_warm: string | null;
+    apology_reply: string | null;
+    refusal_message: string | null;
+    choices: Choice[] | null;
+}
+interface Choice {
+    label: string;
+    reply: string;
+    affection: number;
+    min_level: string | null;
 }
 interface Place {
     id: number;
@@ -27,7 +37,7 @@ interface Place {
     city: { id: number; name: string; province: { country: { id: number; name: string } } };
 }
 
-const props = defineProps<{ npc: Npc | null; place: Place; genders: Record<string, string> }>();
+const props = defineProps<{ npc: Npc | null; place: Place; genders: Record<string, string>; levels: Record<string, string> }>();
 
 const isEdit = !!props.npc;
 
@@ -39,8 +49,14 @@ const form = useForm({
     description: props.npc?.description ?? '',
     image: props.npc?.image ?? '',
     greeting: props.npc?.greeting ?? '',
-    lines: [...(props.npc?.lines ?? [])],
+    greeting_cold: props.npc?.greeting_cold ?? '',
+    greeting_warm: props.npc?.greeting_warm ?? '',
+    apology_reply: props.npc?.apology_reply ?? '',
+    refusal_message: props.npc?.refusal_message ?? '',
+    choices: (props.npc?.choices ?? []).map((c) => ({ ...c })),
 });
+
+const err = (key: string) => (form.errors as Record<string, string>)[key];
 
 if (!isEdit) {
     watch(
@@ -128,30 +144,81 @@ const fieldClass = 'w-full rounded-md border border-input bg-background px-3 py-
                         <InputError :message="form.errors.image" />
                     </div>
 
-                    <div class="grid gap-2">
-                        <Label for="greeting">Sapaan</Label>
-                        <textarea id="greeting" v-model="form.greeting" rows="2" required :class="fieldClass"></textarea>
-                        <InputError :message="form.errors.greeting" />
+                    <div class="grid gap-4">
+                        <div class="grid gap-2">
+                            <Label for="greeting">Sapaan Netral</Label>
+                            <textarea id="greeting" v-model="form.greeting" rows="2" required :class="fieldClass"></textarea>
+                            <InputError :message="form.errors.greeting" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="greeting_cold">Sapaan Ketus (Tak Disukai & Dibenci)</Label>
+                            <textarea id="greeting_cold" v-model="form.greeting_cold" rows="2" :class="fieldClass"></textarea>
+                            <InputError :message="form.errors.greeting_cold" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="greeting_warm">Sapaan Hangat (Teman ke atas)</Label>
+                            <textarea id="greeting_warm" v-model="form.greeting_warm" rows="2" :class="fieldClass"></textarea>
+                            <InputError :message="form.errors.greeting_warm" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="apology_reply">Jawaban "Minta maaf"</Label>
+                            <textarea id="apology_reply" v-model="form.apology_reply" rows="2" :class="fieldClass"></textarea>
+                            <InputError :message="form.errors.apology_reply" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="refusal_message">Pesan Menolak Melayani (opsional)</Label>
+                            <textarea
+                                id="refusal_message"
+                                v-model="form.refusal_message"
+                                rows="2"
+                                :class="fieldClass"
+                                placeholder="Kosongkan untuk NPC yang tak pernah menolak (guild/istana)."
+                            ></textarea>
+                            <InputError :message="form.errors.refusal_message" />
+                        </div>
                     </div>
 
-                    <div class="grid gap-2">
-                        <Label>Baris Dialog</Label>
-                        <p class="text-xs text-muted-foreground">Muncul acak saat pemain menekan "Bicara".</p>
-                        <div v-for="(_, i) in form.lines" :key="i" class="flex items-start gap-2">
-                            <div class="flex-1">
-                                <textarea v-model="form.lines[i]" rows="2" :class="fieldClass"></textarea>
-                                <InputError :message="(form.errors as Record<string, string>)[`lines.${i}`]" />
+                    <div class="grid gap-3">
+                        <Label>Pilihan Dialog</Label>
+                        <p class="text-xs text-muted-foreground">
+                            Pemain memilih teks pilihan, NPC menjawab. Aksi toko/istirahat/misi & "Pamit" ditambahkan otomatis.
+                        </p>
+                        <div v-for="(c, i) in form.choices" :key="i" class="grid gap-2 rounded-lg border p-3">
+                            <div class="flex items-start gap-2">
+                                <div class="flex-1">
+                                    <Input v-model="c.label" placeholder="Teks pilihan pemain" />
+                                    <InputError :message="err(`choices.${i}.label`)" />
+                                </div>
+                                <Button type="button" size="sm" variant="outline" class="text-red-600" @click="form.choices.splice(i, 1)"
+                                    ><X class="h-4 w-4"
+                                /></Button>
                             </div>
-                            <Button type="button" size="sm" variant="outline" class="text-red-600" @click="form.lines.splice(i, 1)"
-                                ><X class="h-4 w-4"
-                            /></Button>
+                            <textarea v-model="c.reply" rows="2" :class="fieldClass" placeholder="Jawaban NPC"></textarea>
+                            <InputError :message="err(`choices.${i}.reply`)" />
+                            <div class="grid gap-2 sm:grid-cols-2">
+                                <select v-model.number="c.affection" :class="fieldClass">
+                                    <option :value="2">Disukai (+2 afeksi)</option>
+                                    <option :value="0">Netral (0)</option>
+                                    <option :value="-2">Tidak disukai (−2 afeksi)</option>
+                                </select>
+                                <select v-model="c.min_level" :class="fieldClass">
+                                    <option :value="null">Terbuka sejak awal</option>
+                                    <option v-for="(label, key) in levels" :key="key" :value="key">Terkunci sampai {{ label }}</option>
+                                </select>
+                            </div>
+                            <InputError :message="err(`choices.${i}.affection`) || err(`choices.${i}.min_level`)" />
                         </div>
                         <div>
-                            <Button type="button" size="sm" variant="outline" @click="form.lines.push('')"
-                                ><Plus class="mr-1 h-4 w-4" /> Tambah Baris</Button
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                @click="form.choices.push({ label: '', reply: '', affection: 0, min_level: null })"
                             >
+                                <Plus class="mr-1 h-4 w-4" /> Tambah Pilihan
+                            </Button>
                         </div>
-                        <InputError :message="form.errors.lines" />
+                        <InputError :message="form.errors.choices" />
                     </div>
 
                     <div class="flex gap-3">

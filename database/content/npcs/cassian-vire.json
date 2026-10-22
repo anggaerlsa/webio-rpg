@@ -1,0 +1,64 @@
+{
+    "place": "toko-sihir-solgrave",
+    "slug": "cassian-vire",
+    "name": "Cassian Vire",
+    "role": "Magister Menara Mantra",
+    "gender": "male",
+    "description": "Pria ±55 tahun, ramping dan tinggi, rambut dan janggut perak, jubah ungu bersulam rune, tongkat kayu hitam. Cendekia, sedikit angkuh, senang berbagi ilmu pada murid serius.",
+    "image": "/images/npcs/cassian-vire.webp",
+    "greeting": "Ah, pengunjung. Ilmu tidak dijual pada yang tergesa-gesa. Tapi untukmu, mungkin aku akan membuat pengecualian.",
+    "greeting_cold": "Menara ini menutup diri bagi yang tak menghormatinya. Kau beruntung pintunya masih terbuka.",
+    "greeting_warm": "Ah, muridku yang paling tekun. Ada buku baru yang kupesan khusus. Kurasa kau sudah siap untuknya.",
+    "apology_reply": "Kerendahan hati adalah mantra pertama yang kuajarkan pada murid. Bagus, kau mulai belajar.",
+    "refusal_message": "Pintu menara terkunci oleh mantra. Sebuah suara dingin bergema: \"Bukan untukmu.\"",
+    "choices": [
+        {
+            "label": "Sejak kapan menara ini berdiri?",
+            "reply": "Menara ini berdiri sejak Astoria masih kerajaan kecil. Setiap batunya menyimpan satu mantra pelindung.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Apa beda sihir Astoria dan Infernia?",
+            "reply": "Para penyihir Infernia memakai api dari amarah. Kami di Astoria memakai disiplin. Hasilnya lebih lambat, tapi lebih awet.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Bagaimana cara mempelajari sihir?",
+            "reply": "Skill dan sihir dipelajari dari buku di rak-rak ini. Ingat, skill menguras SP, sihir menguras MP. Atur keduanya dengan bijak.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Ada kejadian aneh di sekitar kota?",
+            "reply": "Seorang muridku merasakan getaran sihir aneh dari sebuah gua di tepi desa. Goblin biasa tak menghasilkan energi seperti itu.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Bisakah kau jelaskan bagaimana rune pelindung bekerja?",
+            "reply": "Pertanyaan yang tepat! Rune adalah janji yang diukir pada batu. Selama batunya utuh, janjinya ditepati. Jarang ada petualang yang peduli pada teori. Aku terkesan.",
+            "affection": 2,
+            "min_level": null
+        },
+        {
+            "label": "Sihir itu cuma trik murahan, pedang lebih berguna.",
+            "reply": "Pedang memotong satu musuh. Sihir yang tepat meruntuhkan satu pasukan. Pergilah, dan bawa kebodohanmu bersamamu.",
+            "affection": -2,
+            "min_level": null
+        },
+        {
+            "label": "Kenapa kau tak mengajar di akademi?",
+            "reply": "Akademi mengajarkan mantra seperti resep roti. Aku mengajarkan mengapa roti mengembang. Mereka tak suka pertanyaan. Aku tak suka mereka.",
+            "affection": 0,
+            "min_level": "friend"
+        },
+        {
+            "label": "Apa kau pernah menyesali sesuatu?",
+            "reply": "Seorang muridku, sangat berbakat, pergi ke Infernia mencari kekuatan lebih cepat. Ia tak pernah kembali. Kadang aku bertanya, andai aku lebih sabar padanya...",
+            "affection": 2,
+            "min_level": "close"
+        }
+    ]
+}

@@ -13,7 +13,7 @@ interface Npc {
     role: string;
     image: string | null;
     greeting: string;
-    lines: string[] | null;
+    choices: unknown[] | null;
 }
 interface Place {
     id: number;
@@ -65,7 +65,7 @@ function hapus(npc: Npc) {
                 </div>
                 <div class="min-w-0 flex-1">
                     <div class="font-semibold">{{ npc.name }}</div>
-                    <div class="text-xs text-muted-foreground">{{ npc.role }} · {{ npc.lines?.length ?? 0 }} baris dialog</div>
+                    <div class="text-xs text-muted-foreground">{{ npc.role }} · {{ npc.choices?.length ?? 0 }} pilihan dialog</div>
                     <p class="mt-1 line-clamp-2 text-sm italic text-muted-foreground">“{{ npc.greeting }}”</p>
                 </div>
                 <div class="flex shrink-0 items-start gap-2">

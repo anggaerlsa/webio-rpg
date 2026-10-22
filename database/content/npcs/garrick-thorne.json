@@ -1,0 +1,64 @@
+{
+    "place": "tempa-baja-naga",
+    "slug": "garrick-thorne",
+    "name": "Garrick Thorne",
+    "role": "Pandai Besi",
+    "gender": "male",
+    "description": "Pria ±45 tahun, besar dan berotot, janggut pendek beruban di sisi, celemek kulit berjelaga, palu tempa di tangan. Pendiam, jujur, bangga pada karyanya.",
+    "image": "/images/npcs/garrick-thorne.webp",
+    "greeting": "Hm. Kau butuh baja atau cuma mau melihat api? Duduklah, tapi jangan sentuh apa pun yang masih merah.",
+    "greeting_cold": "Kau. Aku tak menempa untuk orang sepertimu. Bicara cepat atau keluar.",
+    "greeting_warm": "Hm. Kau datang. Duduk dekat api, aku baru selesai menempa sesuatu yang mungkin cocok untukmu.",
+    "apology_reply": "...Hm. Baja yang retak bisa ditempa ulang. Mungkin orang juga.",
+    "refusal_message": "Garrick membanting pintu tempanya di depan mukamu.",
+    "choices": [
+        {
+            "label": "Kenapa namanya Baja Naga?",
+            "reply": "Tempa ini dinamai Baja Naga karena kakekku konon pernah mendinginkan pedang di napas naga es. Aku tak percaya, tapi namanya laku.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Siapa yang memakai senjatamu?",
+            "reply": "Legiun Astoria memakai baja dari tungku ini selama dua generasi. Tak satu pun patah di medan perang.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Bagaimana memilih perlengkapan?",
+            "reply": "Kau punya tiga tempat untuk perlengkapan: senjata, zirah, dan aksesori. Isi semuanya, dan serangan serta pertahananmu ikut naik.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Ada kabar dari gerbang?",
+            "reply": "Penjaga gerbang memesan tombak baru minggu ini. Katanya ada yang mengendap-endap di tembok kota tiap malam.",
+            "affection": 0,
+            "min_level": null
+        },
+        {
+            "label": "Pukulan palumu teratur sekali, seperti musik.",
+            "reply": "Hm. Sedikit orang yang mendengarnya. Tiga pukulan, napas, tiga pukulan lagi. Kakekku mengajarkannya. Kau punya telinga yang bagus.",
+            "affection": 2,
+            "min_level": null
+        },
+        {
+            "label": "Pedang buatan kurcaci jauh lebih bagus dari ini.",
+            "reply": "Kalau begitu pergilah ke Nidavellir. Jalannya jauh. Semoga kau tak patah di tengah jalan, seperti pedang murahan.",
+            "affection": -2,
+            "min_level": null
+        },
+        {
+            "label": "Kau tinggal sendirian di sini?",
+            "reply": "Istriku meninggal sepuluh tahun lalu karena demam. Sejak itu, tungku inilah yang menemaniku. Api tak pernah pergi kalau kau terus merawatnya.",
+            "affection": 0,
+            "min_level": "friend"
+        },
+        {
+            "label": "Apa karya terbaikmu?",
+            "reply": "Pedang yang belum pernah kutempa. Aku menyimpan sebongkah baja bintang jatuh untuk orang yang pantas. Mungkin... kau.",
+            "affection": 2,
+            "min_level": "close"
+        }
+    ]
+}

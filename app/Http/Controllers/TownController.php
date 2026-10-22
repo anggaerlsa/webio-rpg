@@ -62,14 +62,8 @@ class TownController extends Controller
         $data = [
             'character' => $this->story->characterState($character),
             'place' => $this->placePayload($place->loadMissing('city')),
-            'npcs' => $place->npcs->map(fn (Npc $n) => [
-                'slug' => $n->slug,
-                'name' => $n->name,
-                'role' => $n->role,
-                'image' => $n->image,
-                'greeting' => $n->greeting,
-                'lines' => $n->lines ?? [],
-            ])->all(),
+            // ponytail: semua pemain dianggap 'stranger' sampai afeksi dibangun (tahap 3).
+            'npcs' => $place->npcs->map(fn (Npc $n) => $this->npcPayload($n, 'stranger'))->all(),
         ];
 
         if ($place->category === 'inn') {
@@ -254,6 +248,33 @@ class TownController extends Controller
             'province' => $city->province?->name,
             'country' => $city->province?->country?->name,
             'country_slug' => $city->province?->country?->slug,
+        ];
+    }
+
+    /**
+     * NPC untuk adegan dialog. Jawaban pilihan yang masih terkunci tidak
+     * dikirim, supaya rahasianya tak bocor lewat data halaman.
+     *
+     * @return array<string, mixed>
+     */
+    private function npcPayload(Npc $npc, string $level): array
+    {
+        return [
+            'slug' => $npc->slug,
+            'name' => $npc->name,
+            'role' => $npc->role,
+            'image' => $npc->image,
+            'greeting' => $npc->greeting,
+            'choices' => collect($npc->choices ?? [])->map(function (array $c) use ($level) {
+                $locked = ! Npc::reaches($level, $c['min_level'] ?? null);
+
+                return [
+                    'label' => $c['label'],
+                    'reply' => $locked ? null : $c['reply'],
+                    'locked' => $locked,
+                    'level_label' => isset($c['min_level']) ? Npc::LEVELS[$c['min_level']]['label'] : null,
+                ];
+            })->all(),
         ];
     }
 

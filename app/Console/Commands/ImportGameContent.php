@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use App\Models\Item;
 use App\Models\Monster;
 use App\Models\NodeChoice;
+use App\Models\Npc;
+use App\Models\Place;
 use App\Models\Quest;
 use App\Models\QuestNode;
 use App\Models\Skill;
@@ -46,6 +48,7 @@ class ImportGameContent extends Command
             $this->importSpells($base.DIRECTORY_SEPARATOR.'spells');
             $this->importStandaloneMonsters($base.DIRECTORY_SEPARATOR.'monsters');
             $this->importQuests($base.DIRECTORY_SEPARATOR.'quests');
+            $this->importNpcs($base.DIRECTORY_SEPARATOR.'npcs');
         });
 
         $this->newLine();
@@ -56,7 +59,8 @@ class ImportGameContent extends Command
             .Monster::count().' monsters, '
             .Skill::count().' skills, '
             .Spell::count().' spells, '
-            .Item::count().' items.');
+            .Item::count().' items, '
+            .Npc::count().' npcs.');
 
         return self::SUCCESS;
     }
@@ -73,6 +77,37 @@ class ImportGameContent extends Command
             DB::table($table)->truncate();
         }
         Schema::enableForeignKeyConstraints();
+    }
+
+    /**
+     * NPC menempel ke Tempat lewat slug. Tempat dikelola di Panel Dewa (bukan
+     * konten), jadi NPC yang tempatnya belum ada dilewati, tidak menggagalkan import.
+     */
+    private function importNpcs(string $dir): void
+    {
+        foreach ($this->jsonFiles($dir) as $data) {
+            $place = Place::where('slug', $data['place'])->first();
+            if (! $place) {
+                $this->warn("NPC {$data['slug']} dilewati: tempat '{$data['place']}' belum ada.");
+
+                continue;
+            }
+
+            Npc::updateOrCreate(['slug' => $data['slug']], [
+                'place_id' => $place->id,
+                'name' => $data['name'],
+                'role' => $data['role'],
+                'gender' => $data['gender'],
+                'description' => $data['description'] ?? null,
+                'image' => $data['image'] ?? null,
+                'greeting' => $data['greeting'],
+                'greeting_cold' => $data['greeting_cold'] ?? null,
+                'greeting_warm' => $data['greeting_warm'] ?? null,
+                'apology_reply' => $data['apology_reply'] ?? null,
+                'refusal_message' => $data['refusal_message'] ?? null,
+                'choices' => $data['choices'] ?? [],
+            ]);
+        }
     }
 
     private function importItems(string $dir): void

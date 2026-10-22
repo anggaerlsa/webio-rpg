@@ -74,8 +74,12 @@ class TownTest extends TestCase
         $inn = $city->places()->create(['category' => 'inn', 'slug' => 'inn', 'name' => 'Singa Emas']);
         $forge->npcs()->create([
             'slug' => 'garrick-thorne', 'name' => 'Garrick Thorne', 'role' => 'Pandai Besi', 'gender' => 'male',
-            'image' => '/images/npcs/garrick-thorne.webp', 'greeting' => 'Hm. Kau butuh baja?',
-            'lines' => ['Baris satu.', 'Baris dua.'],
+            'image' => '/images/npcs/garrick-thorne.webp',
+            'greeting' => 'Hm. Kau butuh baja?', 'greeting_cold' => 'Keluar.', 'greeting_warm' => 'Duduk dekat api.',
+            'choices' => [
+                ['label' => 'Kenapa namanya Baja Naga?', 'reply' => 'Kakekku dan naga es.', 'affection' => 0, 'min_level' => null],
+                ['label' => 'Kau tinggal sendirian?', 'reply' => 'Rahasia sedih.', 'affection' => 0, 'min_level' => 'friend'],
+            ],
         ]);
         $inn->npcs()->create(['slug' => 'rosalind-hale', 'name' => 'Rosalind Hale', 'role' => 'Pemilik Penginapan', 'gender' => 'female', 'greeting' => 'Halo.']);
 
@@ -85,7 +89,10 @@ class TownTest extends TestCase
                 ->where('npcs.0', [
                     'slug' => 'garrick-thorne', 'name' => 'Garrick Thorne', 'role' => 'Pandai Besi',
                     'image' => '/images/npcs/garrick-thorne.webp', 'greeting' => 'Hm. Kau butuh baja?',
-                    'lines' => ['Baris satu.', 'Baris dua.'],
+                    'choices' => [
+                        ['label' => 'Kenapa namanya Baja Naga?', 'reply' => 'Kakekku dan naga es.', 'locked' => false, 'level_label' => null],
+                        ['label' => 'Kau tinggal sendirian?', 'reply' => null, 'locked' => true, 'level_label' => 'Teman'],
+                    ],
                 ]));
     }
 
