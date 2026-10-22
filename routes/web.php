@@ -23,11 +23,22 @@ use App\Http\Controllers\ForumController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\QuestController;
 use App\Http\Controllers\TownController;
+use App\Models\Character;
+use App\Models\City;
+use App\Models\Monster;
+use App\Models\Quest;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome');
+    return Inertia::render('Welcome', [
+        'stats' => [
+            'heroes' => Character::count(),
+            'quests' => Quest::count(),
+            'monsters' => Monster::count(),
+            'cities' => City::count(),
+        ],
+    ]);
 })->name('home');
 
 Route::middleware(['auth'])->group(function () {
