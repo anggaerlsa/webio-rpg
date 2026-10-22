@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AdminTabs from '@/components/admin/AdminTabs.vue';
+import MapView, { type MapMarker } from '@/components/game/MapView.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { watch } from 'vue';
+import { Crown } from 'lucide-vue-next';
+import { computed, watch } from 'vue';
 
 interface Country {
     id: number;
@@ -20,6 +22,9 @@ interface Country {
     dominant_race: string | null;
     description: string | null;
     image: string | null;
+    map_image: string | null;
+    map_x: number | null;
+    map_y: number | null;
 }
 
 const props = defineProps<{ country: Country | null }>();
@@ -36,14 +41,25 @@ const form = useForm({
     dominant_race: props.country?.dominant_race ?? '',
     description: props.country?.description ?? '',
     image: props.country?.image ?? '',
+    map_image: props.country?.map_image ?? '',
+    map_x: props.country?.map_x ?? null,
+    map_y: props.country?.map_y ?? null,
     capital_name: '', // hanya dipakai saat membuat negara baru (otomatis bikin ibukota)
 });
+
+const marker = computed<MapMarker[]>(() =>
+    form.map_x === null || form.map_y === null ? [] : [{ key: 'here', x: form.map_x, y: form.map_y, label: form.name || 'Kerajaan', icon: Crown }],
+);
 
 if (!isEdit) {
     watch(
         () => form.name,
         (n) => {
-            form.slug = (n || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            form.slug = (n || '')
+                .toLowerCase()
+                .trim()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
         },
     );
 }
@@ -125,7 +141,13 @@ const fieldClass = 'w-full rounded-md border border-input bg-background px-3 py-
 
                     <div class="grid gap-2">
                         <Label for="description">Deskripsi (opsional)</Label>
-                        <textarea id="description" v-model="form.description" rows="3" :class="fieldClass" placeholder="Negeri makmur di utara benua..."></textarea>
+                        <textarea
+                            id="description"
+                            v-model="form.description"
+                            rows="3"
+                            :class="fieldClass"
+                            placeholder="Negeri makmur di utara benua..."
+                        ></textarea>
                         <InputError :message="form.errors.description" />
                     </div>
 
@@ -135,9 +157,34 @@ const fieldClass = 'w-full rounded-md border border-input bg-background px-3 py-
                         <InputError :message="form.errors.image" />
                     </div>
 
+                    <div class="grid gap-2">
+                        <Label for="map_image">URL Peta Kerajaan (opsional)</Label>
+                        <Input id="map_image" v-model="form.map_image" placeholder="/images/maps/astoria.webp" />
+                        <p class="text-xs text-muted-foreground">Gambar peta yang tampil saat pemain membuka kerajaan ini.</p>
+                        <InputError :message="form.errors.map_image" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label>Posisi di Peta Benua</Label>
+                        <p class="text-xs text-muted-foreground">Klik di peta untuk menaruh titik kerajaan.</p>
+                        <MapView image="/images/maps/world.webp" :markers="marker" pickable @pick="(p) => ((form.map_x = p.x), (form.map_y = p.y))" />
+                        <div class="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span>{{ form.map_x === null ? 'Belum ditaruh — tidak tampil di peta.' : `x ${form.map_x}% · y ${form.map_y}%` }}</span>
+                            <button v-if="form.map_x !== null" type="button" class="underline" @click="((form.map_x = null), (form.map_y = null))">
+                                Hapus titik
+                            </button>
+                        </div>
+                        <InputError :message="form.errors.map_x || form.errors.map_y" />
+                    </div>
+
                     <div class="flex gap-3">
                         <Button type="submit" :disabled="form.processing">{{ isEdit ? 'Simpan Perubahan' : 'Buat Negara' }}</Button>
-                        <Button type="button" variant="outline" @click="router.visit(isEdit ? route('admin.world.countries.show', country!.id) : route('admin.world.countries.index'))">Batal</Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            @click="router.visit(isEdit ? route('admin.world.countries.show', country!.id) : route('admin.world.countries.index'))"
+                            >Batal</Button
+                        >
                     </div>
                 </form>
             </div>

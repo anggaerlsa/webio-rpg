@@ -10,6 +10,11 @@ class City extends Model
 {
     protected $guarded = [];
 
+    /** Tipe permukiman: kota biasa atau benteng. */
+    public const TYPES = ['city' => 'Kota', 'fortress' => 'Benteng'];
+
+    protected $casts = ['map_x' => 'float', 'map_y' => 'float'];
+
     public function province(): BelongsTo
     {
         return $this->belongsTo(Province::class);

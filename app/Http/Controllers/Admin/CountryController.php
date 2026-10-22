@@ -122,11 +122,16 @@ class CountryController extends Controller
             'dominant_race' => ['nullable', 'string', 'max:80'],
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'string', 'max:255'],
+            'map_image' => ['nullable', 'string', 'max:255'],
+            'map_x' => ['nullable', 'numeric', 'between:0,100'],
+            'map_y' => ['nullable', 'numeric', 'between:0,100'],
         ], [
             'slug.required' => 'Slug wajib diisi.',
             'slug.unique' => 'Slug sudah dipakai negara lain.',
             'slug.regex' => 'Slug hanya boleh huruf kecil, angka, dan tanda hubung (-).',
             'name.required' => 'Nama wajib diisi.',
+            'map_x.between' => 'Posisi di peta harus antara 0 dan 100.',
+            'map_y.between' => 'Posisi di peta harus antara 0 dan 100.',
         ]);
     }
 

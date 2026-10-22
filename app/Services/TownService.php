@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Character;
+use App\Models\City;
+use App\Models\CombatSession;
 use App\Models\Item;
 use App\Models\Place;
 use Illuminate\Database\Eloquent\Collection;
@@ -18,6 +20,9 @@ class TownService
 {
     /** Biaya istirahat di penginapan per level karakter (tunable). */
     private const REST_COST_PER_LEVEL = 10;
+
+    /** Biaya pindah ke kerajaan lain per level karakter (tunable). */
+    private const TRAVEL_COST_PER_LEVEL = 10;
 
     /**
      * Jenis item yang dijual/diterima tiap kategori toko. Kategori yang tak
@@ -36,6 +41,34 @@ class TownService
     public function restCost(Character $character): int
     {
         return self::REST_COST_PER_LEVEL * max(1, (int) $character->level);
+    }
+
+    /** Biaya pindah: gratis dalam satu kerajaan, bayar per level ke kerajaan lain. */
+    public function travelCost(Character $character, City $city): int
+    {
+        $from = $character->city?->province?->country_id;
+
+        return $from === $city->province?->country_id
+            ? 0
+            : self::TRAVEL_COST_PER_LEVEL * max(1, (int) $character->level);
+    }
+
+    /** Masih ada pertarungan aktif? Bepergian ditolak supaya tak bisa kabur lewat peta. */
+    public function isInCombat(Character $character): bool
+    {
+        return CombatSession::where('character_id', $character->id)->where('status', 'active')->exists();
+    }
+
+    /** Pindahkan karakter ke kota/benteng lain dengan biaya gold. */
+    public function travel(Character $character, City $city): void
+    {
+        abort_if($this->isInCombat($character), 422, 'Selesaikan pertarunganmu dulu (lanjutkan di menu Misi) sebelum bepergian.');
+        $cost = $this->travelCost($character, $city);
+        abort_if($character->gold < $cost, 422, "Emasmu tidak cukup untuk perjalanan ini (butuh {$cost} emas).");
+
+        $character->gold -= $cost;
+        $character->city_id = $city->id;
+        $character->save();
     }
 
     /** Apakah semua pool (HP/SP/MP) karakter sudah penuh. */
@@ -60,7 +93,7 @@ class TownService
         $cost = $this->restCost($character);
         abort_if($character->gold < $cost, 422, "Emasmu tidak cukup untuk istirahat (butuh {$cost} emas).");
 
-        return DB::transaction(function () use ($character, $place, $cost) {
+        return DB::transaction(function () use ($character, $cost) {
             $restored = [
                 'hp' => $character->max_hp - $character->hp,
                 'sp' => $character->max_sp - $character->sp,

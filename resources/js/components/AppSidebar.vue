@@ -4,7 +4,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { Castle, Crown, LayoutGrid, Map, ScrollText, UserRound } from 'lucide-vue-next';
+import { Castle, Compass, Crown, LayoutGrid, Map, ScrollText, UserRound } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -19,6 +19,7 @@ const forumUnread = computed(() => ((page.props as Record<string, any>).forum?.u
 const mainNavItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [
         { title: 'Beranda', href: '/dashboard', icon: LayoutGrid },
+        { title: 'Peta', href: '/peta', icon: Compass },
         { title: 'Kota', href: '/town', icon: Castle },
         { title: 'Misi', href: '/quests', icon: Map },
         { title: 'Balai Warta', href: '/forum', icon: ScrollText, badge: forumUnread.value },
@@ -47,7 +48,10 @@ onMounted(() => {
 
 onUnmounted(() => {
     // Hanya melepas pendengar ini — channel yang sama juga dipakai ChatDock.
-    if (userId.value) echo()?.private('App.Models.User.' + userId.value).stopListening('.forum-reply');
+    if (userId.value)
+        echo()
+            ?.private('App.Models.User.' + userId.value)
+            .stopListening('.forum-reply');
 });
 
 watch(

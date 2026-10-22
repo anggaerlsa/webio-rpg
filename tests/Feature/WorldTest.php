@@ -125,6 +125,42 @@ class WorldTest extends TestCase
         ])->assertSessionHasErrors('category');
     }
 
+    public function test_kingdom_map_position_is_saved_and_must_stay_within_the_map(): void
+    {
+        $admin = $this->superadmin();
+        $country = Country::create(['slug' => 'astoria', 'name' => 'Astoria']);
+        $base = ['slug' => 'astoria', 'name' => 'Astoria'];
+
+        $this->actingAs($admin)->put(route('admin.world.countries.update', $country), $base + [
+            'map_image' => '/images/maps/astoria.webp', 'map_x' => 50.5, 'map_y' => 39,
+        ])->assertSessionHasNoErrors();
+
+        $country->refresh();
+        $this->assertSame('/images/maps/astoria.webp', $country->map_image);
+        $this->assertSame(50.5, $country->map_x);
+
+        $this->actingAs($admin)->put(route('admin.world.countries.update', $country), $base + ['map_x' => 101, 'map_y' => -1])
+            ->assertSessionHasErrors(['map_x', 'map_y']);
+    }
+
+    public function test_city_can_be_a_fortress_with_a_map_position(): void
+    {
+        $admin = $this->superadmin();
+        $country = Country::create(['slug' => 'a', 'name' => 'A']);
+        $city = $country->provinces()->create(['slug' => 'p', 'name' => 'P'])->cities()->create(['slug' => 'c', 'name' => 'C']);
+        $base = ['slug' => 'c', 'name' => 'C'];
+
+        $this->actingAs($admin)->put(route('admin.world.cities.update', $city), $base + ['type' => 'fortress', 'map_x' => 20, 'map_y' => 80])
+            ->assertSessionHasNoErrors();
+
+        $city->refresh();
+        $this->assertSame('fortress', $city->type);
+        $this->assertSame(80.0, $city->map_y);
+
+        $this->actingAs($admin)->put(route('admin.world.cities.update', $city), $base + ['type' => 'istana-terbang'])
+            ->assertSessionHasErrors('type');
+    }
+
     public function test_country_slug_must_be_unique_and_well_formed(): void
     {
         $admin = $this->superadmin();

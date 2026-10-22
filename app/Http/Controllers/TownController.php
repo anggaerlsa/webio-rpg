@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Character;
+use App\Models\City;
 use App\Models\Item;
 use App\Models\Place;
 use App\Models\Quest;
@@ -217,7 +218,7 @@ class TownController extends Controller
     }
 
     /** Kota karakter saat ini; assign kota awal secara lazy bila belum punya. */
-    private function resolveCity(Character $character): ?\App\Models\City
+    private function resolveCity(Character $character): ?City
     {
         if (! $character->city_id) {
             $start = Character::startingCity();
@@ -231,7 +232,7 @@ class TownController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function cityPayload(\App\Models\City $city): array
+    private function cityPayload(City $city): array
     {
         $city->loadMissing('province.country');
 
@@ -239,8 +240,11 @@ class TownController extends Controller
             'slug' => $city->slug,
             'name' => $city->name,
             'description' => $city->description,
+            'image' => $city->image,
+            'type_label' => City::TYPES[$city->type] ?? $city->type,
             'province' => $city->province?->name,
             'country' => $city->province?->country?->name,
+            'country_slug' => $city->province?->country?->slug,
         ];
     }
 

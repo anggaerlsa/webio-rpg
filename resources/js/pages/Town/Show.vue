@@ -4,8 +4,9 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { placeMeta } from '@/lib/places';
 import { type BreadcrumbItem } from '@/types';
 import type { CharacterState } from '@/types/game';
-import { Head, Link } from '@inertiajs/vue3';
-import { BedDouble, MapPin, Store } from 'lucide-vue-next';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { BedDouble, Compass, MapPin, Store } from 'lucide-vue-next';
+import { computed } from 'vue';
 
 interface PlaceCard {
     slug: string;
@@ -21,18 +22,30 @@ interface CityState {
     slug: string;
     name: string;
     description: string | null;
+    image: string | null;
+    type_label: string;
     province: string | null;
     country: string | null;
+    country_slug: string | null;
 }
 
-defineProps<{
+const props = defineProps<{
     character: CharacterState;
     city: CityState | null;
     places: PlaceCard[];
     rest_cost: number;
 }>();
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Kota', href: '/town' }];
+const page = usePage();
+const flashSuccess = computed(() => (page.props as Record<string, any>).flash?.success as string | undefined);
+
+const breadcrumbs: BreadcrumbItem[] = props.city?.country_slug
+    ? [
+          { title: 'Peta', href: '/peta' },
+          { title: props.city.country ?? '', href: route('map.kingdom', props.city.country_slug) },
+          { title: props.city.name, href: '/town' },
+      ]
+    : [{ title: 'Kota', href: '/town' }];
 </script>
 
 <template>
@@ -49,14 +62,29 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Kota', href: '/town' }];
             </div>
 
             <template v-else>
+                <div v-if="flashSuccess" class="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-600">
+                    {{ flashSuccess }}
+                </div>
+
                 <!-- Header kota -->
-                <div class="rounded-xl border bg-card p-5">
-                    <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                        <MapPin class="h-4 w-4" />
-                        <span>{{ [city.country, city.province].filter(Boolean).join(' · ') || 'Kota Asal' }}</span>
+                <div class="overflow-hidden rounded-xl border bg-card">
+                    <img v-if="city.image" :src="city.image" :alt="city.name" class="aspect-[3/1] w-full object-cover" />
+                    <div class="flex flex-wrap items-start justify-between gap-3 p-5">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                                <MapPin class="h-4 w-4" />
+                                <span>{{ [city.type_label, city.country].filter(Boolean).join(' · ') }}</span>
+                            </div>
+                            <h1 class="mt-1 font-display text-2xl font-bold">{{ city.name }}</h1>
+                            <p v-if="city.description" class="mt-1 font-serif text-muted-foreground">{{ city.description }}</p>
+                        </div>
+                        <Link
+                            :href="route('map.index')"
+                            class="inline-flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition hover:border-primary hover:bg-accent"
+                        >
+                            <Compass class="h-4 w-4" /> Keluar Kota
+                        </Link>
                     </div>
-                    <h1 class="font-display mt-1 text-2xl font-bold">{{ city.name }}</h1>
-                    <p v-if="city.description" class="font-serif mt-1 text-muted-foreground">{{ city.description }}</p>
                 </div>
 
                 <!-- Daftar Tempat -->

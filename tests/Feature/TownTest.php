@@ -6,9 +6,9 @@ use App\Models\Character;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\Item;
-use App\Models\Place;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class TownTest extends TestCase
@@ -51,6 +51,19 @@ class TownTest extends TestCase
         $this->actingAs($user)->get(route('town.show'))->assertOk();
 
         $this->assertSame($city->id, $char->fresh()->city_id);
+    }
+
+    public function test_town_page_sends_the_city_banner_and_its_kingdom(): void
+    {
+        $city = $this->makeCity();
+        $city->update(['type' => 'fortress', 'image' => '/images/cities/eldoria.webp']);
+        [$user] = $this->playerIn($city);
+
+        $this->actingAs($user)->get(route('town.show'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('city.image', '/images/cities/eldoria.webp')
+                ->where('city.type_label', 'Benteng')
+                ->where('city.country_slug', 'eldoria-land'));
     }
 
     public function test_resting_at_the_inn_restores_pools_and_charges_gold(): void

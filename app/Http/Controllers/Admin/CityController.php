@@ -82,11 +82,17 @@ class CityController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'string', 'max:255'],
+            'type' => ['sometimes', Rule::in(array_keys(City::TYPES))],
+            'map_x' => ['nullable', 'numeric', 'between:0,100'],
+            'map_y' => ['nullable', 'numeric', 'between:0,100'],
         ], [
             'slug.required' => 'Slug wajib diisi.',
             'slug.unique' => 'Slug sudah dipakai kota lain.',
             'slug.regex' => 'Slug hanya boleh huruf kecil, angka, dan tanda hubung (-).',
             'name.required' => 'Nama wajib diisi.',
+            'map_x.between' => 'Posisi di peta harus antara 0 dan 100.',
+            'map_y.between' => 'Posisi di peta harus antara 0 dan 100.',
+            'type.in' => 'Tipe harus Kota atau Benteng.',
         ]);
     }
 }

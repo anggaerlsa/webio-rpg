@@ -10,6 +10,8 @@ class Country extends Model
 {
     protected $guarded = [];
 
+    protected $casts = ['map_x' => 'float', 'map_y' => 'float'];
+
     public function provinces(): HasMany
     {
         return $this->hasMany(Province::class);
