@@ -19,6 +19,11 @@ class DatabaseSeeder extends Seeder
         // Import game content (quests, nodes, monsters, items, skills, spells) from JSON files.
         $this->call(GameContentSeeder::class);
 
+        // Sandi demo di bawah ini ada di repo, jadi tidak boleh lahir di produksi.
+        if (app()->isProduction()) {
+            return;
+        }
+
         // Dewa (superadmin) — akses Panel Dewa di /admin.
         // Catatan: `role` & `email_verified_at` tidak mass-assignable, jadi diset eksplisit.
         $admin = User::firstOrCreate(
